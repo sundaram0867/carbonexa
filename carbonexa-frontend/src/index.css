@@ -1,0 +1,150 @@
+
+/* ==========================================
+   CARBONEXA — Global Styles
+   Mining Intelligence Dashboard
+   ========================================== */
+
+/* 1. Global reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  margin: 0;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+
+  color: #243247;
+  background-color: #e8eef5;
+
+  /* Mining landscape background */
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(239, 245, 251, 0.48) 0%,
+      rgba(239, 245, 251, 0.64) 55%,
+      rgba(222, 232, 243, 0.42) 100%
+    ),
+    url("./assets/hero.png");
+
+  background-position: center center, center center;
+  background-size: cover, cover;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 2. React application root */
+#root {
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+}
+
+/* 3. Default typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+  line-height: 1.3;
+}
+
+p {
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 4. Form controls */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+/* 5. Images and media */
+img,
+svg,
+video {
+  max-width: 100%;
+}
+
+img {
+  display: block;
+}
+
+/* 6. Accessible keyboard focus */
+:focus-visible {
+  outline: 2px solid #1683d8;
+  outline-offset: 3px;
+}
+
+/* 7. Keep the application layout transparent
+      so the body background can show through */
+main {
+  min-width: 0;
+}
+
+/* 8. Responsive background on mobile */
+@media (max-width: 768px) {
+  body {
+    background-position: center center, center center;
+    background-attachment: scroll, scroll;
+  }
+}
+
+/* 9. Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
