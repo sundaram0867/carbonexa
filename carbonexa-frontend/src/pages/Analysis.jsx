@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import {
+  Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
+  Tooltip, XAxis, YAxis
+} from 'recharts';
 import { 
   Leaf, Truck, BarChart2, Plus, 
-  Calendar, ChevronDown, Trash2, X, FileText, CheckCircle2 
+  Calendar, Trash2, X, FileText, CheckCircle2
 } from 'lucide-react';
 
 function Analysis() {
@@ -10,7 +14,6 @@ function Analysis() {
   const [selectedMineFilter, setSelectedMineFilter] = useState('All Mines');
   const [activeBarIndex, setActiveBarIndex] = useState(7); // Default to August
   const [activeGeoIndex, setActiveGeoIndex] = useState(0); // Default to first item (Coal)
-  const [isGeoHovered, setIsGeoHovered] = useState(false);
   const [hoveredEnvCard, setHoveredEnvCard] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -69,12 +72,19 @@ function Analysis() {
     { month: 'Sep', val: 65, total: '38,900', coal: '25,800', overburden: '9,500', others: '3,600' },
   ];
 
+  const miningChartData = monthlyBars.map((item) => ({
+    month: item.month,
+    coal: Number(item.coal.replaceAll(',', '')),
+    overburden: Number(item.overburden.replaceAll(',', '')),
+    others: Number(item.others.replaceAll(',', '')),
+  }));
+
   const geologicalData = [
-    { name: 'Coal', percentage: '52%', volume: '6,47,712 t', color: '#1e3a8a' },
-    { name: 'Overburden', percentage: '28%', volume: '3,47,968 t', color: '#0284c7' },
-    { name: 'Sandstone', percentage: '12%', volume: '1,49,472 t', color: '#38bdf8' },
-    { name: 'Shale', percentage: '6%', volume: '74,736 t', color: '#f97316' },
-    { name: 'Others', percentage: '2%', volume: '24,672 t', color: '#a855f7' },
+    { name: 'Coal', percentage: '52%', volume: '647,712 tonnes', value: 647712, color: '#146c6c' },
+    { name: 'Overburden', percentage: '28%', volume: '347,968 tonnes', value: 347968, color: '#168a78' },
+    { name: 'Sandstone', percentage: '12%', volume: '149,472 tonnes', value: 149472, color: '#4f9d98' },
+    { name: 'Shale', percentage: '6%', volume: '74,736 tonnes', value: 74736, color: '#8bbdb3' },
+    { name: 'Others', percentage: '2%', volume: '24,672 tonnes', value: 24672, color: '#b8d5ce' },
   ];
 
   // Handle Delete Report
@@ -128,7 +138,7 @@ function Analysis() {
   const activeBarData = monthlyBars[activeBarIndex];
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
+    <div className="workspace-page analysis-page" style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
       
       {/* Toast Notification */}
       {toastMessage && (
@@ -142,7 +152,7 @@ function Analysis() {
         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
           Home &gt; <span style={{ color: '#0f172a', fontWeight: '500' }}>Analysis</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+        <div className="workspace-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px 0' }}>Analysis</h1>
             <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
@@ -179,6 +189,7 @@ function Analysis() {
             </div>
 
             <button 
+              className="workspace-primary-action"
               onClick={() => setIsGenerateOpen(true)}
               style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
             >
@@ -189,7 +200,7 @@ function Analysis() {
       </div>
 
       {/* Top Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="workspace-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         
         <div style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -244,131 +255,112 @@ function Analysis() {
       </div>
 
       {/* Middle Section: Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px', marginBottom: '24px' }}>
+      <div className="analysis-chart-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px', marginBottom: '24px' }}>
         
         {/* Mining Output Trend Chart */}
         <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BarChart2 size={16} color="#0284c7" /> Mining Output Trend (Click bars to inspect)
+                <BarChart2 size={16} color="#146c6c" /> Mining Output Trend
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Monthly output for {selectedMineFilter}</span>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>Monthly material volumes for {selectedMineFilter}</span>
             </div>
-            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              Monthly <ChevronDown size={12} />
+            <div className="analysis-selected-month" aria-live="polite">
+              <strong>{activeBarData.month} 2026</strong>
+              <span>{activeBarData.total} tonnes total</span>
             </div>
           </div>
 
-          {/* Interactive Floating Tooltip Box */}
-          <div style={{ position: 'absolute', top: '75px', left: '38%', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, fontSize: '11px' }}>
-            <div style={{ color: '#64748b', marginBottom: '2px' }}>{activeBarData.month} 2026 Selected</div>
-            <div style={{ fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Total: {activeBarData.total} tonnes</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0284c7', marginBottom: '2px' }}><span style={{ width: '8px', height: '8px', background: '#0284c7', borderRadius: '2px' }}></span> Coal <span style={{ marginLeft: 'auto', fontWeight: '600' }}>{activeBarData.coal}</span></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#60a5fa', marginBottom: '2px' }}><span style={{ width: '8px', height: '8px', background: '#60a5fa', borderRadius: '2px' }}></span> Overburden <span style={{ marginLeft: 'auto', fontWeight: '600' }}>{activeBarData.overburden}</span></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1' }}><span style={{ width: '8px', height: '8px', background: '#cbd5e1', borderRadius: '2px' }}></span> Others <span style={{ marginLeft: 'auto', fontWeight: '600', color: '#0f172a' }}>{activeBarData.others}</span></div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '170px', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9', marginTop: '20px' }}>
-            {monthlyBars.map((item, i) => (
-              <div 
-                key={i} 
-                onClick={() => setActiveBarIndex(i)}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1, height: '100%', justifyContent: 'flex-end', cursor: 'pointer' }}
+          <div className="analysis-output-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={miningChartData}
+                margin={{ top: 8, right: 8, left: -12, bottom: 0 }}
+                onClick={(event) => {
+                  if (typeof event?.activeTooltipIndex === 'number') {
+                    setActiveBarIndex(event.activeTooltipIndex);
+                  }
+                }}
               >
-                <div style={{ 
-                  width: '18px', 
-                  height: `${item.val}%`, 
-                  background: activeBarIndex === i ? '#0284c7' : '#bae6fd', 
-                  borderRadius: '4px 4px 0 0', 
-                  transform: activeBarIndex === i ? 'scaleY(1.08)' : 'scaleY(1)',
-                  boxShadow: activeBarIndex === i ? '0 4px 12px rgba(2, 132, 199, 0.4)' : 'none',
-                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)' 
-                }}></div>
-                <span style={{ fontSize: '10px', color: activeBarIndex === i ? '#0284c7' : '#64748b', fontWeight: activeBarIndex === i ? '700' : 'normal' }}>{item.month}</span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '12px', fontSize: '11px', color: '#334155' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '8px', height: '8px', background: '#0284c7', borderRadius: '50%' }}></span> Coal</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '8px', height: '8px', background: '#60a5fa', borderRadius: '50%' }}></span> Overburden</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '8px', height: '8px', background: '#cbd5e1', borderRadius: '50%' }}></span> Others</span>
+                <CartesianGrid stroke="#e6efef" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}k`} />
+                <Tooltip
+                  contentStyle={{ border: '1px solid #dce6ee', borderRadius: '10px', boxShadow: '0 8px 24px rgba(23, 50, 75, 0.12)' }}
+                  formatter={(value) => [`${Number(value).toLocaleString()} tonnes`]}
+                />
+                <Bar dataKey="coal" name="Coal" stackId="output" fill="#146c6c" radius={[0, 0, 3, 3]} />
+                <Bar dataKey="overburden" name="Overburden" stackId="output" fill="#168a78" />
+                <Bar dataKey="others" name="Others" stackId="output" fill="#8bbdb3" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
         {/* Geological Distribution Donut Chart */}
         <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '16px' }}>
-            Click or hover a chart segment or category to highlight it.
+          <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '4px' }}>
+            Material Distribution
+          </div>
+          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px' }}>
+            Select a material to inspect its share.
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-            
-            {/* Donut Chart with Smooth Hover Scale Effect */}
-            <div 
-              onMouseEnter={() => setIsGeoHovered(true)}
-              onMouseLeave={() => setIsGeoHovered(false)}
-              style={{ 
-                width: '150px', 
-                height: '150px', 
-                borderRadius: '50%', 
-                background: 'conic-gradient(#1e3a8a 0% 52%, #0284c7 52% 80%, #38bdf8 80% 92%, #f97316 92% 98%, #a855f7 98% 100%)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                position: 'relative',
-                transform: isGeoHovered ? 'scale(1.04)' : 'scale(1)',
-                boxShadow: isGeoHovered ? '0 10px 25px rgba(0,0,0,0.12)' : 'none',
-                transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-              }}
-            >
-              
-              {/* Invisible Hover / Click Slices over the Ring */}
-              <div onMouseEnter={() => setActiveGeoIndex(0)} onClick={() => setActiveGeoIndex(0)} style={{ position: 'absolute', top: 0, left: '50%', width: '75px', height: '75px', transformOrigin: 'bottom left', cursor: 'pointer' }}></div>
-              <div onMouseEnter={() => setActiveGeoIndex(1)} onClick={() => setActiveGeoIndex(1)} style={{ position: 'absolute', top: 0, right: 0, width: '75px', height: '75px', transformOrigin: 'bottom left', cursor: 'pointer' }}></div>
-              <div onMouseEnter={() => setActiveGeoIndex(2)} onClick={() => setActiveGeoIndex(2)} style={{ position: 'absolute', bottom: 0, right: 0, width: '75px', height: '75px', transformOrigin: 'top left', cursor: 'pointer' }}></div>
-              <div onMouseEnter={() => setActiveGeoIndex(3)} onClick={() => setActiveGeoIndex(3)} style={{ position: 'absolute', bottom: 0, left: '50%', width: '75px', height: '75px', transformOrigin: 'top right', cursor: 'pointer' }}></div>
-              <div onMouseEnter={() => setActiveGeoIndex(4)} onClick={() => setActiveGeoIndex(4)} style={{ position: 'absolute', bottom: 0, left: 0, width: '75px', height: '75px', transformOrigin: 'top right', cursor: 'pointer' }}></div>
-
-              {/* Center Donut Hole displaying active breakdown cleanly */}
-              <div style={{ width: '96px', height: '96px', background: '#fff', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2, pointerEvents: 'none', textAlign: 'center', padding: '6px' }}>
-                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '500', lineHeight: '1.2' }}>{geologicalData[activeGeoIndex].name}</span>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: geologicalData[activeGeoIndex].color, marginTop: '2px' }}>{geologicalData[activeGeoIndex].percentage}</span>
+          <div className="analysis-geology-layout">
+            <div className="analysis-geology-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={geologicalData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="58%"
+                    outerRadius="82%"
+                    paddingAngle={2}
+                    stroke="#fff"
+                    strokeWidth={2}
+                    onClick={(_, index) => setActiveGeoIndex(index)}
+                  >
+                    {geologicalData.map((item, index) => (
+                      <Cell
+                        key={item.name}
+                        fill={item.color}
+                        opacity={activeGeoIndex === index ? 1 : 0.5}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ border: '1px solid #dce6ee', borderRadius: '10px', boxShadow: '0 8px 24px rgba(23, 50, 75, 0.12)' }}
+                    formatter={(_, name, item) => [item.payload.volume, name]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="analysis-geology-center" aria-live="polite">
+                <strong>{geologicalData[activeGeoIndex].percentage}</strong>
+                <span>{geologicalData[activeGeoIndex].name}</span>
               </div>
             </div>
 
-            {/* List Selection on Right with Click & Hover Support */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, marginLeft: '20px' }}>
-              {geologicalData.map((item, idx) => (
-                <div 
-                  key={idx}
-                  onMouseEnter={() => setActiveGeoIndex(idx)}
-                  onClick={() => setActiveGeoIndex(idx)}
-                  style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    padding: '8px 12px', 
-                    borderRadius: '8px', 
-                    background: activeGeoIndex === idx ? '#f1f5f9' : '#f8fafc',
-                    border: activeGeoIndex === idx ? '1px solid #0284c7' : '1px solid transparent',
-                    cursor: 'pointer',
-                    transform: activeGeoIndex === idx ? 'translateX(6px)' : 'translateX(0)',
-                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                  }}
+            <div className="analysis-geology-legend">
+              {geologicalData.map((item, index) => (
+                <button
+                  type="button"
+                  key={item.name}
+                  aria-pressed={activeGeoIndex === index}
+                  onClick={() => setActiveGeoIndex(index)}
+                  className={activeGeoIndex === index ? 'is-selected' : ''}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#334155', fontWeight: '500' }}>
-                    <span style={{ width: '9px', height: '9px', background: item.color, borderRadius: '50%', transform: activeGeoIndex === idx ? 'scale(1.3)' : 'scale(1)', transition: 'transform 0.2s' }}></span> 
+                  <span className="analysis-legend-name">
+                    <span style={{ background: item.color }} />
                     {item.name}
                   </span>
-                  <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>
-                    {item.percentage}
-                  </span>
-                </div>
+                  <strong>{item.percentage}</strong>
+                </button>
               ))}
             </div>
-
           </div>
 
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '28px' }}>
@@ -385,7 +377,7 @@ function Analysis() {
           <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>Key environmental parameters across mines</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <div className="analysis-environment-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
           
           {[
             { title: 'Air Quality (PM2.5)', val: '42', unit: 'μg/m³', trend: '↑ 15%' },
@@ -434,7 +426,7 @@ function Analysis() {
       </div>
 
       {/* Lower Section: Recent Analysis Reports & Mine-wise Output */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+      <div className="analysis-lower-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
         
         {/* Recent Analysis Reports Table */}
         <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
@@ -445,7 +437,7 @@ function Analysis() {
             <span style={{ fontSize: '12px', color: '#0284c7', fontWeight: '500', cursor: 'pointer' }}>View All</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 40px', padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#64748b' }}>
+          <div className="analysis-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 40px', padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#64748b' }}>
             <div>Report Name</div>
             <div>Type</div>
             <div>Mine/Project</div>
@@ -459,7 +451,7 @@ function Analysis() {
               <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>No reports found.</div>
             ) : (
               analysisReports.map((rep) => (
-                <div key={rep.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 40px', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: '12px' }}>
+                <div key={rep.id} className="analysis-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 40px', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                     <FileText size={16} color="#0284c7" style={{ marginTop: '2px', flexShrink: 0 }} />
                     <div>
@@ -567,7 +559,7 @@ function Analysis() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setIsGenerateOpen(false)} style={{ background: '#f1f5f9', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', color: '#334155' }}>Cancel</button>
-                <button type="submit" style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>Run Analysis</button>
+                <button className="workspace-primary-action" type="submit" style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>Run Analysis</button>
               </div>
             </form>
           </div>

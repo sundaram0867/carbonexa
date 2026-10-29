@@ -213,7 +213,7 @@ function Archives() {
   };
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
+    <div className="workspace-page archives-page" style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
       
       {/* Toast Notification */}
       {toastMessage && (
@@ -228,7 +228,7 @@ function Archives() {
           Home &gt; <span style={{ color: '#0f172a', fontWeight: '500' }}>Archives</span>
         </div>
         
-        <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: '12px', padding: '24px 32px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 15px rgba(15, 23, 42, 0.2)' }}>
+        <div className="workspace-banner archives-banner" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: '12px', padding: '24px 32px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 15px rgba(15, 23, 42, 0.2)' }}>
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 6px 0' }}>Archives</h1>
             <p style={{ fontSize: '13px', margin: 0, opacity: 0.85, maxWidth: '600px' }}>
@@ -237,6 +237,7 @@ function Archives() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button 
+              className="workspace-primary-action"
               onClick={() => setIsUploadOpen(true)}
               style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
             >
@@ -247,7 +248,7 @@ function Archives() {
       </div>
 
       {/* Top Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="workspace-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         
         <div style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -296,23 +297,24 @@ function Archives() {
       </div>
 
       {/* Main Layout: Left Sidebar & Right Content */}
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '24px' }}>
+      <div className="archives-main-grid" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '24px' }}>
         
         {/* Left Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="archives-folder-panel" style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Folders</span>
               <Plus size={15} color="#0284c7" style={{ cursor: 'pointer' }} onClick={() => setIsUploadOpen(true)} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div className="archives-folder-list" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {foldersList.map((folder, idx) => {
                 const isSelected = selectedFolder === folder.name;
                 return (
                   <div 
                     key={idx}
+                    className={`archives-folder-entry${isSelected ? ' active' : ''}`}
                     onClick={() => { setSelectedFolder(folder.name); setCurrentPage(1); }}
                     style={{ 
                       display: 'flex', 
@@ -355,10 +357,10 @@ function Archives() {
         </div>
 
         {/* Right Content Area */}
-        <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+        <div className="archives-content-panel" style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
           
           {/* Search & Filter Toolbar */}
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="archives-toolbar" style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 10px', height: '36px', gap: '8px', flex: 1, minWidth: '220px' }}>
               <Search size={15} color="#94a3b8" />
               <input 
@@ -411,8 +413,9 @@ function Archives() {
             </div>
           </div>
 
+          <div className="archives-table-scroll">
           {/* Table Header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '30px 2.5fr 1fr 1.2fr 1.2fr 90px 80px 40px 40px', padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '12px', fontWeight: '600', color: '#64748b', alignItems: 'center' }}>
+          <div className="archives-table-row" style={{ display: 'grid', gridTemplateColumns: '30px 2.5fr 1fr 1.2fr 1.2fr 90px 80px 40px 40px', padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '12px', fontWeight: '600', color: '#64748b', alignItems: 'center' }}>
             <div><input type="checkbox" /></div>
             <div>Name ↕</div>
             <div>Type</div>
@@ -425,7 +428,7 @@ function Archives() {
           </div>
 
           {/* Table Rows */}
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '340px' }}>
+          <div className="archives-table-body" style={{ display: 'flex', flexDirection: 'column', minHeight: '340px' }}>
             {displayedArchives.length === 0 ? (
               <div style={{ padding: '50px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
                 No archived files found matching your criteria.
@@ -434,6 +437,7 @@ function Archives() {
               displayedArchives.map((item) => (
                 <div 
                   key={item.id}
+                  className="archives-table-row"
                   style={{ 
                     display: 'grid', 
                     gridTemplateColumns: '30px 2.5fr 1fr 1.2fr 1.2fr 90px 80px 40px 40px', 
@@ -487,6 +491,7 @@ function Archives() {
                 </div>
               ))
             )}
+          </div>
           </div>
 
           {/* Fully Dynamic Pagination Footer */}
@@ -599,7 +604,7 @@ function Archives() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setIsUploadOpen(false)} style={{ background: '#f1f5f9', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', color: '#334155' }}>Cancel</button>
-                <button type="submit" style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>Upload & Archive</button>
+                <button className="workspace-primary-action" type="submit" style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>Upload & Archive</button>
               </div>
             </form>
           </div>

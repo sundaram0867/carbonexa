@@ -1,5 +1,6 @@
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ResponsiveContainer,
   LineChart,
@@ -19,16 +20,41 @@ import {
   Mountain,
   Activity,
   FileText,
-  BrainCircuit,
   RefreshCw,
   Layers,
   Download,
   TrendingUp,
   Leaf,
-  ShieldCheck,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import "./Dashboard.css";
+import projectImage from "../assets/header-bg.png";
+import sunriseMineImage from "../assets/bg.png";
+
+const dashboardSlides = [
+  {
+    image: projectImage,
+    eyebrow: "MINING OPERATIONS OVERVIEW",
+    title: "Mining Intelligence Dashboard",
+    description: "Monitor mining production, environmental performance, and reports.",
+    action: "Explore project data",
+    path: "/analysis",
+    badge: "Current project",
+    position: "center 54%",
+  },
+  {
+    image: sunriseMineImage,
+    eyebrow: "SUSTAINABLE OPERATIONS",
+    title: "Track production. Protect the environment.",
+    description: "Review illustrative production and environmental trends across your projects.",
+    action: "View environmental trends",
+    path: "/analysis",
+    badge: "Environmental trends",
+    position: "center 60%",
+  },
+];
 
 const productionData = [
   { month: "Jan", actual: 4.2, target: 4.5 },
@@ -61,10 +87,10 @@ const environmentalData = [
 ];
 
 const activityData = [
-  { name: "Coal Mining", value: 40, color: "#1976d2" },
-  { name: "Environment", value: 25, color: "#16a36a" },
-  { name: "Geology", value: 20, color: "#f0a526" },
-  { name: "Safety", value: 15, color: "#8056d9" },
+  { name: "Coal Mining", value: 40, color: "#146c6c" },
+  { name: "Environment", value: 25, color: "#168a78" },
+  { name: "Geology", value: 20, color: "#4f9d98" },
+  { name: "Safety", value: 15, color: "#8bbdb3" },
 ];
 
 const reportData = [
@@ -139,6 +165,16 @@ function Dashboard() {
   const [showWater, setShowWater] = useState(true);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const slide = dashboardSlides[activeSlide];
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const slideTimer = window.setInterval(() => {
+      setActiveSlide((currentSlide) => (currentSlide + 1) % dashboardSlides.length);
+    }, 7000);
+    return () => window.clearInterval(slideTimer);
+  }, []);
 
   const visibleProduction = useMemo(
     () => productionData.slice(-Number(period)),
@@ -192,62 +228,101 @@ function Dashboard() {
 
   return (
     <div className="carbon-dashboard">
-      <header className="dashboard-heading">
-        <div>
-          <p> CMPDI / CIL ANALYTICS </p>
-          <h1>Mining Intelligence Dashboard</h1>
-          <p>
-            Monitor mining production, environmental performance, and reports.
-          </p>
+      <header
+        className="dashboard-heading"
+        aria-label="Dashboard highlights"
+        aria-roledescription="carousel"
+      >
+        <div className="dashboard-project-visual" aria-hidden="true">
+          <img src={slide.image} alt="" style={{ objectPosition: slide.position }} />
         </div>
-
+        <button
+          type="button"
+          className="dashboard-carousel-arrow previous"
+          aria-label="Show previous dashboard highlight"
+          onClick={() => setActiveSlide((currentSlide) => (currentSlide - 1 + dashboardSlides.length) % dashboardSlides.length)}
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <div className="dashboard-title-block" key={activeSlide} role="group" aria-roledescription="slide" aria-label={`${activeSlide + 1} of ${dashboardSlides.length}`}>
+          <span className="dashboard-eyebrow">
+            <Mountain size={14} /> {slide.eyebrow}
+          </span>
+          <h1>{slide.title}</h1>
+          <p className="dashboard-description">{slide.description}</p>
+          <Link className="dashboard-slide-link" to={slide.path}>{slide.action}<ChevronRight size={16} /></Link>
+        </div>
         <div className="dashboard-heading-actions">
-          <button className="chart-toggle" onClick={resetDashboard}>
+          <span className="dashboard-prototype-badge">
+            <span /> {slide.badge}
+          </span>
+          <button className="chart-toggle dashboard-reset-button" onClick={resetDashboard}>
             <RefreshCw size={14} /> Reset
           </button>
-
-          <button className="chart-toggle" onClick={exportReports}>
+          <button className="chart-toggle dashboard-export-button" onClick={exportReports}>
             <Download size={14} /> Export Reports
           </button>
+        </div>
+        <button
+          type="button"
+          className="dashboard-carousel-arrow next"
+          aria-label="Show next dashboard highlight"
+          onClick={() => setActiveSlide((currentSlide) => (currentSlide + 1) % dashboardSlides.length)}
+        >
+          <ChevronRight size={20} />
+        </button>
+        <div className="dashboard-carousel-dots" role="group" aria-label="Choose dashboard highlight">
+          {dashboardSlides.map((dashboardSlide, index) => (
+            <button
+              key={dashboardSlide.eyebrow}
+              type="button"
+              aria-label={`Show highlight ${index + 1}: ${dashboardSlide.eyebrow.toLowerCase()}`}
+              aria-pressed={activeSlide === index}
+              className={activeSlide === index ? "active" : ""}
+              onClick={() => setActiveSlide(index)}
+            />
+          ))}
         </div>
       </header>
 
       <section className="dashboard-kpis">
-        <article className="dashboard-kpi">
+        <article className="dashboard-kpi kpi-projects">
           <span className="kpi-icon kpi-blue">
             <Layers size={21} />
           </span>
-          <span>Active Projects</span>
+          <span className="kpi-label">Active Projects</span>
           <strong>24</strong>
           <small>Mining projects tracked</small>
         </article>
 
-        <article className="dashboard-kpi">
+        <article className="dashboard-kpi kpi-production">
           <span className="kpi-icon kpi-green">
             <Activity size={21} />
           </span>
-          <span>June Production</span>
+          <span className="kpi-label">June Production</span>
           <strong>5,700 <em>tonnes</em></strong>
           <small>Illustrative target: 6,200 tonnes</small>
+          <span
+            className="kpi-progress"
+            role="progressbar"
+            aria-label="June production against illustrative target"
+            aria-valuenow="92"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <span />
+          </span>
         </article>
 
-        <article className="dashboard-kpi">
+        <article className="dashboard-kpi kpi-reports">
           <span className="kpi-icon kpi-purple">
             <FileText size={21} />
           </span>
-          <span>Reports Generated</span>
+          <span className="kpi-label">Reports Generated</span>
           <strong>186</strong>
           <small>Across project categories</small>
         </article>
 
-        <article className="dashboard-kpi">
-          <span className="kpi-icon kpi-gold">
-            <BrainCircuit size={21} />
-          </span>
-          <span>AI Insights</span>
-          <strong>12</strong>
-          <small>Illustrative insights available</small>
-        </article>
       </section>
 
       <section className="dashboard-chart-grid">
@@ -293,7 +368,7 @@ function Dashboard() {
                   type="monotone"
                   dataKey="actual"
                   name="Actual Production"
-                  stroke="#1976d2"
+                  stroke="#146c6c"
                   strokeWidth={3}
                   dot={{ r: 4 }}
                   activeDot={{ r: 7 }}
@@ -303,7 +378,7 @@ function Dashboard() {
                     type="monotone"
                     dataKey="target"
                     name="Target Production"
-                    stroke="#16a36a"
+                    stroke="#8bbdb3"
                     strokeWidth={2}
                     strokeDasharray="5 4"
                     dot={{ r: 3 }}
@@ -350,7 +425,7 @@ function Dashboard() {
                   type="monotone"
                   dataKey="air"
                   name="Air Quality Index"
-                  stroke="#8056d9"
+                  stroke="#146c6c"
                   strokeWidth={3}
                   dot={{ r: 3 }}
                   activeDot={{ r: 6 }}
@@ -360,7 +435,7 @@ function Dashboard() {
                     type="monotone"
                     dataKey="water"
                     name="Water Quality Index"
-                    stroke="#159caa"
+                    stroke="#8bbdb3"
                     strokeWidth={3}
                     dot={{ r: 3 }}
                     activeDot={{ r: 6 }}
@@ -491,108 +566,30 @@ function Dashboard() {
                 <Bar
                   dataKey="geological"
                   name="Geological"
-                  fill="#1976d2"
+                  fill="#146c6c"
                   radius={[3, 3, 0, 0]}
                 />
                 <Bar
                   dataKey="mining"
                   name="Mining"
-                  fill="#16a36a"
+                  fill="#168a78"
                   radius={[3, 3, 0, 0]}
                 />
                 <Bar
                   dataKey="environment"
                   name="Environment"
-                  fill="#f0a526"
+                  fill="#4f9d98"
                   radius={[3, 3, 0, 0]}
                 />
                 <Bar
                   dataKey="safety"
                   name="Safety"
-                  fill="#8056d9"
+                  fill="#8bbdb3"
                   radius={[3, 3, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </article>
-      </section>
-
-      <section className="dashboard-chart-grid">
-        <article className="dashboard-panel">
-          <div className="panel-heading">
-            <div>
-              <h2>
-                <BrainCircuit size={16} /> AI Insights
-              </h2>
-              <p>Sample observations for the dashboard prototype</p>
-            </div>
-            <span className="demo-label">DEMO</span>
-          </div>
-
-          <div className="dashboard-insight">
-            <span className="insight-dot insight-green" />
-            <div>
-              <strong>Production trend</strong>
-              <p>
-                Review monthly output against the production target to identify
-                potential operational gaps.
-              </p>
-            </div>
-          </div>
-
-          <div className="dashboard-insight">
-            <span className="insight-dot insight-gold" />
-            <div>
-              <strong>Environmental monitoring</strong>
-              <p>
-                Review air and water monitoring records against applicable
-                compliance limits.
-              </p>
-            </div>
-          </div>
-
-          <div className="dashboard-insight">
-            <span className="insight-dot" style={{ background: "#8056d9" }} />
-            <div>
-              <strong>Report review</strong>
-              <p>
-                Follow up on reports marked In Review or Draft before final
-                submission.
-              </p>
-            </div>
-          </div>
-
-          <p className="dashboard-demo-note">
-            These are example observations, not live AI-generated findings.
-            Connect the backend and verified monitoring data for operational use.
-          </p>
-        </article>
-
-        <article className="dashboard-panel">
-          <div className="panel-heading">
-            <div>
-              <h2>
-                <ShieldCheck size={16} /> System Health
-              </h2>
-              <p>Prototype service status</p>
-            </div>
-          </div>
-
-          {[
-            ["Document Processing", "Demo"],
-            ["AI Analysis Engine", "Demo"],
-            ["Database", "Demo"],
-            ["API Services", "Demo"],
-          ].map(([service, status]) => (
-            <div className="dashboard-insight" key={service}>
-              <span className="insight-dot insight-green" />
-              <div>
-                <strong>{service}</strong>
-                <p>{status} status — connect the service to verify availability.</p>
-              </div>
-            </div>
-          ))}
         </article>
       </section>
 
@@ -625,6 +622,7 @@ function Dashboard() {
               {recentReports.map((report) => (
                 <tr
                   key={report.id}
+                  className={selectedReport === report.id ? "report-selected" : ""}
                   onClick={() =>
                     setSelectedReport((current) =>
                       current === report.id ? null : report.id

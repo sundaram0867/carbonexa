@@ -3,6 +3,18 @@ import {
   FileText, CheckCircle2, Clock, FileEdit, Plus, Download, 
   Search, BarChart2, PieChart, ArrowUpRight, X, Trash2, Calendar 
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart as RechartsBarChart,
+  Bar,
+  CartesianGrid,
+  Cell,
+  PieChart as RechartsPieChart,
+  Pie,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 function Reports() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -165,6 +177,13 @@ function Reports() {
   const approvedCount = reportsList.filter(r => r.status === 'Approved').length;
   const inReviewCount = reportsList.filter(r => r.status === 'In Review').length;
   const draftCount = reportsList.filter(r => r.status === 'Draft').length;
+  const reportStatusData = [
+    { name: 'Approved', value: approvedCount, color: '#168a78' },
+    { name: 'In Review', value: inReviewCount, color: '#d99b37' },
+    { name: 'Draft', value: draftCount, color: '#8b79c9' },
+  ];
+  const peakMonth = monthsData.reduce((peak, month) => (month.count > peak.count ? month : peak), monthsData[0]);
+  const selectedActivityMonth = monthsData.find((month) => month.name === selectedMonthFilter);
 
   const getStatusBadge = (status) => {
     switch(status) {
@@ -186,14 +205,14 @@ function Reports() {
   };
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
+    <div className="workspace-page reports-page" style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
       
       {/* Breadcrumb & Header */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
           Home &gt; <span style={{ color: '#0f172a', fontWeight: '500' }}>Reports</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="workspace-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px 0' }}>Reports</h1>
             <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
@@ -202,6 +221,7 @@ function Reports() {
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button 
+              className="workspace-primary-action"
               onClick={() => setIsGenerateOpen(true)}
               style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
             >
@@ -215,7 +235,7 @@ function Reports() {
       </div>
 
       {/* Top Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="workspace-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         <div style={{ background: '#fff', padding: '18px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Total Reports</span>
@@ -250,90 +270,110 @@ function Reports() {
       </div>
 
       {/* Middle Section: Charts & Templates */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 340px', gap: '24px', marginBottom: '24px' }}>
+      <div className="reports-feature-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 340px', gap: '24px', marginBottom: '24px' }}>
         
-        {/* Interactive Report Activity Chart Box */}
-        <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <section className="reports-chart-panel">
+          <div className="reports-chart-heading">
             <div>
-              <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BarChart2 size={16} color="#0284c7" /> Report Activity 
-                {selectedMonthFilter && <span style={{ fontSize: '10px', background: '#e0f2fe', color: '#0284c7', padding: '2px 6px', borderRadius: '4px' }}>({selectedMonthFilter})</span>}
-              </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Click any month bar to filter by month</span>
+              <h2><BarChart2 size={17} /> Report Activity</h2>
+              <p>Reports created by month</p>
+            </div>
+            <select
+              aria-label="Filter reports by month"
+              className="reports-chart-select"
+              value={selectedMonthFilter || 'All'}
+              onChange={(event) => setSelectedMonthFilter(event.target.value === 'All' ? null : event.target.value)}
+            >
+              <option value="All">All months</option>
+              {monthsData.map((month) => <option key={month.name} value={month.name}>{month.name}</option>)}
+            </select>
+          </div>
+          <div className="reports-activity-chart" role="img" aria-label="Monthly report activity bar chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsBarChart
+                data={monthsData}
+                margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+                onClick={(event) => {
+                  if (typeof event?.activeTooltipIndex === 'number') {
+                    const month = monthsData[event.activeTooltipIndex]?.name;
+                    if (month) setSelectedMonthFilter(selectedMonthFilter === month ? null : month);
+                  }
+                }}
+              >
+                <defs>
+                  <linearGradient id="reportsActivityGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#35b69a" />
+                    <stop offset="100%" stopColor="#146c6c" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#e8eff2" strokeDasharray="3 4" vertical={false} />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#718497', fontSize: 10 }} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: '#8a9aaa', fontSize: 10 }} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(22, 138, 120, 0.08)' }}
+                  contentStyle={{ border: '1px solid #dce6ee', borderRadius: '10px', boxShadow: '0 8px 24px rgba(23, 50, 75, 0.12)' }}
+                  formatter={(value) => [`${value} reports`, 'Activity']}
+                />
+                <Bar dataKey="count" name="Reports" radius={[7, 7, 2, 2]} maxBarSize={24}>
+                  {monthsData.map((month) => (
+                    <Cell key={month.name} fill={selectedMonthFilter === month.name ? '#e5a84b' : 'url(#reportsActivityGradient)'} />
+                  ))}
+                </Bar>
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="reports-chart-footnote">
+            <span><i /> {selectedActivityMonth ? `${selectedActivityMonth.count} reports in ${selectedActivityMonth.name}` : `Peak month · ${peakMonth.name}`}</span>
+            <strong>{selectedActivityMonth ? selectedActivityMonth.count : peakMonth.count}<small> reports</small></strong>
+          </div>
+        </section>
+
+        <section className="reports-chart-panel reports-status-panel">
+          <div className="reports-chart-heading">
+            <div>
+              <h2><PieChart size={17} /> Report Status</h2>
+              <p>Distribution across your report library</p>
             </div>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '140px', paddingBottom: '5px', borderBottom: '1px solid #f1f5f9', marginTop: '10px' }}>
-            {monthsData.map((m, i) => {
-              const isSelected = selectedMonthFilter === m.name;
-              return (
-                <div 
-                  key={i} 
-                  onClick={() => setSelectedMonthFilter(isSelected ? null : m.name)}
-                  title={`${m.name}: ${m.count} reports`}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1, height: '100%', justifyContent: 'flex-end', cursor: 'pointer' }}
+          <div className="reports-status-visual">
+            <div className="reports-status-chart" role="img" aria-label="Report status distribution donut chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie data={reportStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={77} paddingAngle={4} stroke="none">
+                    {reportStatusData.map((item) => (
+                      <Cell
+                        key={item.name}
+                        fill={item.color}
+                        opacity={selectedStatusFilter === 'All' || selectedStatusFilter === item.name ? 1 : 0.38}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ border: '1px solid #dce6ee', borderRadius: '10px', boxShadow: '0 8px 24px rgba(23, 50, 75, 0.12)' }}
+                    formatter={(value, name) => [`${value} reports`, name]}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+              <div className="reports-status-center" aria-hidden="true">
+                <strong>{reportsList.length}</strong><span>Total</span>
+              </div>
+            </div>
+            <div className="reports-status-legend" aria-label="Filter reports by status">
+              {reportStatusData.map((item) => (
+                <button
+                  type="button"
+                  key={item.name}
+                  aria-pressed={selectedStatusFilter === item.name}
+                  className={selectedStatusFilter === item.name ? 'active' : ''}
+                  onClick={() => setSelectedStatusFilter(selectedStatusFilter === item.name ? 'All' : item.name)}
                 >
-                  <div style={{ 
-                    width: '12px', 
-                    height: `${m.val}%`, 
-                    background: isSelected ? '#0369a1' : '#bae6fd', 
-                    borderRadius: '4px 4px 0 0',
-                    transition: 'background 0.2s' 
-                  }}></div>
-                  <span style={{ fontSize: '9px', color: isSelected ? '#0284c7' : '#64748b', fontWeight: isSelected ? '700' : '400' }}>{m.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Interactive Pie Chart Status Box */}
-        <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <PieChart size={16} color="#0284c7" /> Report Status <span style={{ fontSize: '10px', color: '#0284c7', fontWeight: '400' }}>(Click legend)</span>
-              </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Distribution of reports by status</span>
+                  <span><i style={{ backgroundColor: item.color }} />{item.name}</span>
+                  <strong>{item.value}</strong>
+                </button>
+              ))}
             </div>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '145px', marginTop: '5px' }}>
-            <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'conic-gradient(#16a34a 0% 66.7%, #d97706 66.7% 87.1%, #9333ea 87.1% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '65px', height: '65px', background: '#fff', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>{reportsList.length}</span>
-                <span style={{ fontSize: '8px', color: '#64748b' }}>Total</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
-              <div 
-                onClick={() => setSelectedStatusFilter(selectedStatusFilter === 'Approved' ? 'All' : 'Approved')}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', cursor: 'pointer', padding: '3px 6px', borderRadius: '4px', background: selectedStatusFilter === 'Approved' ? '#dcfce7' : 'transparent' }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}><span style={{ width: '8px', height: '8px', background: '#16a34a', borderRadius: '50%' }}></span> Approved</span>
-                <span style={{ fontWeight: '600', color: '#0f172a' }}>{approvedCount}</span>
-              </div>
-
-              <div 
-                onClick={() => setSelectedStatusFilter(selectedStatusFilter === 'In Review' ? 'All' : 'In Review')}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', cursor: 'pointer', padding: '3px 6px', borderRadius: '4px', background: selectedStatusFilter === 'In Review' ? '#fef3c7' : 'transparent' }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}><span style={{ width: '8px', height: '8px', background: '#d97706', borderRadius: '50%' }}></span> In Review</span>
-                <span style={{ fontWeight: '600', color: '#0f172a' }}>{inReviewCount}</span>
-              </div>
-
-              <div 
-                onClick={() => setSelectedStatusFilter(selectedStatusFilter === 'Draft' ? 'All' : 'Draft')}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', cursor: 'pointer', padding: '3px 6px', borderRadius: '4px', background: selectedStatusFilter === 'Draft' ? '#fae8ff' : 'transparent' }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}><span style={{ width: '8px', height: '8px', background: '#9333ea', borderRadius: '50%' }}></span> Drafts</span>
-                <span style={{ fontWeight: '600', color: '#0f172a' }}>{draftCount}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
 
         {/* Report Templates Box */}
         <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '16px', display: 'flex', flexDirection: 'column' }}>
@@ -368,7 +408,7 @@ function Reports() {
       </div>
 
       {/* Lower Section: All Reports & Recent Exports */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
+      <div className="reports-lower-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
         
         {/* All Reports Table */}
         <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
@@ -432,7 +472,7 @@ function Reports() {
           </div>
 
           {/* Table Header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 90px 1.2fr 90px 50px', padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '12px', fontWeight: '600', color: '#64748b', alignItems: 'center' }}>
+          <div className="reports-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 90px 1.2fr 90px 50px', padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '12px', fontWeight: '600', color: '#64748b', alignItems: 'center' }}>
             <div>Report Name</div>
             <div>Project / Mine</div>
             <div>Category</div>
@@ -452,6 +492,7 @@ function Reports() {
               filteredReports.map((rep) => (
                 <div 
                   key={rep.id}
+                  className="reports-table-grid-row"
                   style={{ 
                     display: 'grid', 
                     gridTemplateColumns: '2fr 1fr 1fr 90px 1.2fr 90px 50px', 
@@ -571,7 +612,7 @@ function Reports() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setIsGenerateOpen(false)} style={{ background: '#f1f5f9', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', color: '#334155' }}>Cancel</button>
-                <button type="submit" style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>Generate & Export</button>
+                <button className="workspace-primary-action" type="submit" style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>Generate & Export</button>
               </div>
             </form>
           </div>

@@ -14,11 +14,6 @@ function Footer() {
         <a href="#">Terms of Use</a>
       </div>
 
-      <div className="system-status">
-        <span className="status-dot"></span>
-        All systems operational
-      </div>
-
     </footer>
   );
 }

@@ -1,81 +1,124 @@
 import { useState } from 'react';
-import { Bell, CheckCircle, AlertTriangle, Info, Trash2 } from 'lucide-react';
+import { Bell, CheckCircle, AlertTriangle, Info, Trash2, Check, MailOpen } from 'lucide-react';
+import { loadNotifications, saveNotifications } from '../data/notifications';
 
 function Notifications() {
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'alert', title: 'High Dust Emission Alert', desc: 'Active mine sector 4 reported elevated particulate levels.', time: '10 mins ago', read: false },
-    { id: 2, type: 'success', title: 'Monthly Report Generated', desc: 'CMPDI / CIL analytics report successfully compiled.', time: '1 hour ago', read: false },
-    { id: 3, type: 'info', title: 'System Update Completed', desc: 'Carbonexa backend synchronized to v2.4.1.', time: '5 hours ago', read: false },
-  ]);
+  const [initialState] = useState(loadNotifications);
+  const [notifications, setNotifications] = useState(initialState.notifications);
+  const [filter, setFilter] = useState('all');
+  const [storageError, setStorageError] = useState(initialState.error);
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
+  const visibleNotifications = notifications.filter((notification) => {
+    if (filter === 'unread') return !notification.read;
+    if (filter === 'alerts') return notification.type === 'alert';
+    return true;
+  });
+
+  const updateNotifications = (nextNotifications) => {
+    try {
+      saveNotifications(nextNotifications);
+      setNotifications(nextNotifications);
+      setStorageError('');
+    } catch {
+      setStorageError('Your changes could not be saved in this browser. Check available storage and try again.');
+    }
+  };
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    updateNotifications(notifications.map((notification) => ({ ...notification, read: true })));
   };
 
   const deleteNotification = (id) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+    updateNotifications(notifications.filter((notification) => notification.id !== id));
+  };
+
+  const toggleRead = (id) => {
+    updateNotifications(notifications.map((notification) => (
+      notification.id === id ? { ...notification, read: !notification.read } : notification
+    )));
+  };
+
+  const clearRead = () => {
+    updateNotifications(notifications.filter((notification) => !notification.read));
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
+    <div className="workspace-page notifications-page">
+      <header className="notifications-header">
+        <div className="notifications-heading">
           <h2>Notifications Center</h2>
-          <p style={{ color: '#64748b', fontSize: '14px', margin: '4px 0 0' }}>Manage your active mine alerts and system updates.</p>
+          <p>Manage your mine alerts and workspace updates. Your changes are saved in this browser.</p>
         </div>
-        <button 
-          onClick={markAllAsRead}
-          style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
-        >
-          Mark all as read
-        </button>
+        <div className="notifications-actions">
+          <button type="button" onClick={clearRead} disabled={!notifications.some((notification) => notification.read)}>
+            <Trash2 size={15} aria-hidden="true" />
+            Clear read
+          </button>
+          <button type="button" className="workspace-primary-action" onClick={markAllAsRead} disabled={!unreadCount}>
+            <Check size={15} aria-hidden="true" />
+            Mark all as read
+          </button>
+        </div>
+      </header>
+
+      {storageError && <p className="notifications-storage-error" role="status">{storageError}</p>}
+
+      <div className="notifications-summary">
+        <div className="notifications-unread-count" aria-live="polite">
+          <span>{unreadCount}</span>
+          <div><strong>Unread</strong><small>{unreadCount === 1 ? 'notification needs' : 'notifications need'} your attention</small></div>
+        </div>
+        <div className="notifications-filter" role="group" aria-label="Filter notifications">
+          {[
+            { id: 'all', label: `All (${notifications.length})` },
+            { id: 'unread', label: `Unread (${unreadCount})` },
+            { id: 'alerts', label: `Alerts (${notifications.filter((notification) => notification.type === 'alert').length})` },
+          ].map((option) => (
+            <button
+              type="button"
+              key={option.id}
+              className={filter === option.id ? 'active' : ''}
+              aria-pressed={filter === option.id}
+              onClick={() => setFilter(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {notifications.length === 0 ? (
-          <div style={{ background: '#fff', padding: '40px', textAlign: 'center', borderRadius: '8px', color: '#64748b' }}>
-            <Bell size={32} style={{ marginBottom: '8px', opacity: 0.5 }} />
-            <p>You have no new notifications.</p>
+      <div className="notifications-list">
+        {visibleNotifications.length === 0 ? (
+          <div className="notifications-empty">
+            <Bell size={30} aria-hidden="true" />
+            <strong>{notifications.length === 0 ? 'You’re all caught up' : 'No notifications in this view'}</strong>
+            <p>{notifications.length === 0 ? 'New alerts and updates will appear here.' : 'Try a different filter to see more notifications.'}</p>
           </div>
         ) : (
-          notifications.map(n => (
-            <div 
-              key={n.id}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '16px',
-                background: n.read ? '#fff' : '#f0f9ff',
-                border: '1px solid',
-                borderColor: n.read ? '#e2e8f0' : '#bae6fd',
-                padding: '16px',
-                borderRadius: '8px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-                transition: 'all 0.2s'
-              }}
-            >
-              <div style={{ marginTop: '2px' }}>
-                {n.type === 'alert' && <AlertTriangle size={20} color="#f59e0b" />}
-                {n.type === 'success' && <CheckCircle size={20} color="#10b981" />}
-                {n.type === 'info' && <Info size={20} color="#0284c7" />}
+          visibleNotifications.map((notification) => (
+            <article key={notification.id} className={`notification-card${notification.read ? ' is-read' : ''}`}>
+              <div className={`notification-type-icon ${notification.type}`} aria-hidden="true">
+                {notification.type === 'alert' && <AlertTriangle size={19} />}
+                {notification.type === 'success' && <CheckCircle size={19} />}
+                {notification.type === 'info' && <Info size={19} />}
               </div>
-
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <h4 style={{ margin: 0, fontSize: '15px', color: '#1e293b' }}>{n.title}</h4>
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>{n.time}</span>
+              <div className="notification-content">
+                <div className="notification-title-row">
+                  <h3>{notification.title}</h3>
+                  {!notification.read && <span className="notification-unread-label">New</span>}
                 </div>
-                <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>{n.desc}</p>
+                <p>{notification.desc}</p>
+                <time>{notification.time}</time>
               </div>
-
-              <button 
-                onClick={() => deleteNotification(n.id)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px' }}
-                title="Delete notification"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
+              <div className="notification-card-actions">
+                <button type="button" onClick={() => toggleRead(notification.id)} aria-label={notification.read ? 'Mark as unread' : 'Mark as read'} title={notification.read ? 'Mark as unread' : 'Mark as read'}>
+                  {notification.read ? <MailOpen size={16} /> : <Check size={16} />}
+                </button>
+                <button type="button" onClick={() => deleteNotification(notification.id)} aria-label="Delete notification" title="Delete notification">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </article>
           ))
         )}
       </div>

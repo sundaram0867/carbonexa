@@ -1,16 +1,73 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Bot, Send, Paperclip, Database, Globe, Plus, 
-  FileText, BarChart2, PieChart, Edit3, Lightbulb, 
+  BarChart2, PieChart, Edit3, Lightbulb, FolderSearch,
   MoreVertical 
 } from 'lucide-react';
+import { loadDocumentLibrary } from '../data/documentLibrary';
+
+const navigationPages = [
+  { label: 'Dashboard', path: '/' },
+  { label: 'Documents', path: '/documents' },
+  { label: 'Reports', path: '/reports' },
+  { label: 'Analysis', path: '/analysis' },
+  { label: 'Archives', path: '/archives' },
+  { label: 'Settings', path: '/settings' },
+  { label: 'Notifications', path: '/notifications' },
+];
+
+const searchStopWords = new Set([
+  'a', 'all', 'and', 'can', 'document', 'documents', 'file', 'files', 'find',
+  'for', 'folder', 'folders', 'in', 'is', 'latest', 'locate', 'me', 'my', 'of', 'open', 'please',
+  'search', 'show', 'the', 'to', 'where', 'which',
+]);
+
+function getAssistantResponse(prompt) {
+  const normalizedPrompt = prompt.toLowerCase();
+  const destination = navigationPages.find((item) => (
+    normalizedPrompt.includes(item.label.toLowerCase())
+    && /\b(open|go|navigate|show|take me)\b/.test(normalizedPrompt)
+  ));
+
+  if (destination) {
+    return { text: `Open ${destination.label} to continue.`, destination };
+  }
+
+  if (/\b(file|files|document|documents|folder|folders|find|search|locate|where)\b/.test(normalizedPrompt)) {
+    const terms = normalizedPrompt
+      .replace(/[^a-z0-9._-]+/g, ' ')
+      .split(/\s+/)
+      .filter((term) => term && !searchStopWords.has(term));
+    const { files, folders, error } = loadDocumentLibrary();
+    const matchingFiles = files.filter((file) => {
+      const searchableText = `${file.name.replace(/[_-]/g, ' ')} ${file.folder} ${file.category}`.toLowerCase();
+      return terms.length === 0 || terms.every((term) => searchableText.includes(term));
+    });
+    const matches = matchingFiles.slice(0, 6);
+
+    return {
+      text: `${error ? `${error} ` : ''}${matchingFiles.length
+        ? `Found ${matchingFiles.length} matching ${matchingFiles.length === 1 ? 'file' : 'files'} in your saved library${matchingFiles.length > matches.length ? `; showing the first ${matches.length}` : ''}:`
+        : 'No files matched that search in the saved library. Try a file name, category, or folder such as “safety”, “water”, or “geological”.'}`,
+      files: matches.map((file) => ({
+        ...file,
+        folderExists: folders.some((folder) => folder.name === file.folder),
+      })),
+    };
+  }
+
+  return {
+    text: 'I can search your saved document library and take you to app sections. Try “Find safety files”, “Search water analysis”, or “Open Documents”. Operational analysis and document summarization need a connected AI service.',
+  };
+}
 
 function AIAssistant() {
   const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'ai',
-      text: "Hello! I'm CARBONEXA AI Assistant.\n\nI can help you with:\n• Analyzing mining and geological data\n• Summarizing reports and documents\n• Generating insights and visualizations\n• Creating project-specific reports\n\nWhat would you like to know or analyze today?",
+      text: "Hello! I'm Carbonexa's file assistant.\n\nI can search the saved document library by file name, type, category, or folder and take you to other app sections. Try “Find safety files” or “Open Documents”.",
       time: '10:24 AM'
     }
   ]);
@@ -27,22 +84,24 @@ function AIAssistant() {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
+    const prompt = inputValue.trim();
 
     const userMsg = {
       id: Date.now(),
       sender: 'user',
-      text: inputValue,
+      text: prompt,
       time: 'Just now'
     };
 
+    const assistantResponse = getAssistantResponse(prompt);
     const aiReply = {
       id: Date.now() + 1,
       sender: 'ai',
-      text: `I've analyzed your request regarding "${inputValue}". Based on the current geological and production database, all parameters for Jharia and Bokaro blocks are within optimal compliance thresholds. Let me know if you need a detailed export!`,
+      ...assistantResponse,
       time: 'Just now'
     };
 
-    setMessages([...messages, userMsg, aiReply]);
+    setMessages((currentMessages) => [...currentMessages, userMsg, aiReply]);
     setInputValue('');
   };
 
@@ -62,7 +121,7 @@ function AIAssistant() {
   };
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
+    <div className="workspace-page assistant-page" style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
       
       {/* Breadcrumb & Header Banner */}
       <div style={{ marginBottom: '20px' }}>
@@ -70,14 +129,14 @@ function AIAssistant() {
           Home &gt; <span style={{ color: '#0f172a', fontWeight: '500' }}>AI Assistant</span>
         </div>
         
-        <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderRadius: '12px', padding: '24px 32px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 15px rgba(2, 132, 199, 0.2)' }}>
+        <div className="workspace-banner assistant-banner" style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderRadius: '12px', padding: '24px 32px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 15px rgba(2, 132, 199, 0.2)' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
               <h1 style={{ fontSize: '24px', fontWeight: '700', margin: 0 }}>CARBONEXA AI Assistant</h1>
               <span style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>Beta</span>
             </div>
             <p style={{ fontSize: '13px', margin: 0, opacity: 0.9, maxWidth: '600px' }}>
-              Ask, analyze and generate insights from your mining, geological and operational data.
+              Find saved files by name, category, or folder and navigate the workspace with simple requests.
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -87,20 +146,20 @@ function AIAssistant() {
       </div>
 
       {/* Top Capability Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', marginBottom: '24px' }}>
+      <div className="assistant-capability-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', marginBottom: '24px' }}>
         
-        <div onClick={() => handleQuickPrompt("Summarize the latest geological report")} style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}>
-          <div style={{ background: '#e0f2fe', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
-            <FileText size={18} />
+        <div onClick={() => handleQuickPrompt("Find a safety file")} style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}>
+          <div className="assistant-capability-icon" style={{ background: '#e0f2fe', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
+            <FolderSearch size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Summarize Document</div>
-            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Get key insights from reports and documents</div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Find a File</div>
+            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Search by name, category, or folder</div>
           </div>
         </div>
 
         <div onClick={() => handleQuickPrompt("Compare coal production of last 6 months")} style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}>
-          <div style={{ background: '#dcfce7', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
+          <div className="assistant-capability-icon" style={{ background: '#dcfce7', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
             <BarChart2 size={18} />
           </div>
           <div>
@@ -110,7 +169,7 @@ function AIAssistant() {
         </div>
 
         <div onClick={() => handleQuickPrompt("Identify current environmental risks and opportunities")} style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}>
-          <div style={{ background: '#fef3c7', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
+          <div className="assistant-capability-icon" style={{ background: '#fef3c7', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
             <Lightbulb size={18} />
           </div>
           <div>
@@ -120,7 +179,7 @@ function AIAssistant() {
         </div>
 
         <div onClick={() => handleQuickPrompt("Create resource distribution charts and dashboards")} style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}>
-          <div style={{ background: '#fae8ff', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9333ea' }}>
+          <div className="assistant-capability-icon" style={{ background: '#fae8ff', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9333ea' }}>
             <PieChart size={18} />
           </div>
           <div>
@@ -130,7 +189,7 @@ function AIAssistant() {
         </div>
 
         <div onClick={() => handleQuickPrompt("Draft a detailed production and safety report")} style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}>
-          <div style={{ background: '#fee2e2', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}>
+          <div className="assistant-capability-icon" style={{ background: '#fee2e2', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}>
             <Edit3 size={18} />
           </div>
           <div>
@@ -142,7 +201,7 @@ function AIAssistant() {
       </div>
 
       {/* Main Grid: Chat Workspace (Left) & Quick Actions/Recent Chats (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
+      <div className="assistant-chat-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
         
         {/* Chat Box */}
         <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '620px' }}>
@@ -150,7 +209,7 @@ function AIAssistant() {
           {/* Chat Header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ background: '#0284c7', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <div className="assistant-chat-avatar" style={{ background: '#0284c7', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                 <Bot size={18} />
               </div>
               <div>
@@ -185,7 +244,7 @@ function AIAssistant() {
                   alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start' 
                 }}
               >
-                <div style={{ 
+                <div className={`assistant-message-bubble${msg.sender === 'user' ? ' is-user' : ''}`} style={{
                   maxWidth: '80%', 
                   padding: '12px 16px', 
                   borderRadius: msg.sender === 'user' ? '12px 12px 0 12px' : '12px 12px 12px 0', 
@@ -197,6 +256,21 @@ function AIAssistant() {
                   boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                 }}>
                   {msg.text}
+                  {msg.destination && (
+                    <Link className="assistant-result-link" to={msg.destination.path}>
+                      Go to {msg.destination.label}
+                    </Link>
+                  )}
+                  {msg.files?.map((file) => (
+                    <Link
+                      className="assistant-file-result"
+                      key={file.id}
+                      to={`/documents?search=${encodeURIComponent(file.name)}`}
+                    >
+                      <strong>{file.name}</strong>
+                      <span>{file.folderExists ? file.folder : 'Folder no longer exists'} · {file.category} · {file.size}</span>
+                    </Link>
+                  ))}
                 </div>
                 <span style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>{msg.time}</span>
               </div>
@@ -204,9 +278,9 @@ function AIAssistant() {
           </div>
 
           {/* Suggestion Chips */}
-          <div style={{ padding: '10px 20px', background: '#fff', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '8px', overflowX: 'auto' }}>
-            <button onClick={() => handleQuickPrompt("Summarize the latest geological report")} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', padding: '5px 10px', borderRadius: '16px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              📄 Summarize the latest geological report
+          <div className="assistant-suggestion-buttons" style={{ padding: '10px 20px', background: '#fff', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '8px', overflowX: 'auto' }}>
+            <button onClick={() => handleQuickPrompt("Find a safety file")} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', padding: '5px 10px', borderRadius: '16px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              📁 Find safety files
             </button>
             <button onClick={() => handleQuickPrompt("Compare coal production of last 6 months")} style={{ background: '#e0f2fe', border: '1px solid #bae6fd', color: '#0284c7', padding: '5px 10px', borderRadius: '16px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               📊 Compare coal production of last 6 months
@@ -221,7 +295,7 @@ function AIAssistant() {
             <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 12px', gap: '10px' }}>
               <input 
                 type="text" 
-                placeholder="Ask anything about your documents, data, reports or mining operations..." 
+                placeholder="Try “Find safety files” or “Open Documents”..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', width: '100%', color: '#0f172a' }}
@@ -251,8 +325,8 @@ function AIAssistant() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               
               <div onClick={() => handleQuickPrompt("Summarize document")} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <FileText size={16} color="#0284c7" />
-                <span style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>Summarize Document</span>
+                <FolderSearch size={16} color="#0284c7" />
+                <span style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>Find a File</span>
               </div>
 
               <div onClick={() => handleQuickPrompt("Analyze dataset")} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px' }}>
