@@ -28,6 +28,11 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  MapPinned,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Factory,
 } from "lucide-react";
 import "./Dashboard.css";
 import projectImage from "../assets/header-bg.png";
@@ -151,6 +156,21 @@ const recentReports = [
   },
 ];
 
+const mineSites = [
+  { id: "jharia", name: "Jharia Block", region: "Jharkhand", status: "Operating", production: 148, x: 55, y: 38 },
+  { id: "bokaro", name: "Bokaro Project", region: "Jharkhand", status: "Operating", production: 126, x: 68, y: 30 },
+  { id: "north-karanpura", name: "North Karanpura", region: "Jharkhand", status: "Monitoring", production: 92, x: 43, y: 52 },
+  { id: "talcher", name: "Talcher Coalfield", region: "Odisha", status: "Operating", production: 174, x: 70, y: 68 },
+  { id: "ib-valley", name: "Ib Valley", region: "Odisha", status: "Maintenance", production: 0, x: 84, y: 53 },
+  { id: "mand-raigarh", name: "Mand-Raigarh", region: "Chhattisgarh", status: "Monitoring", production: 78, x: 31, y: 69 },
+];
+
+const mineStatusColors = {
+  Operating: "#168a78",
+  Monitoring: "#e5a331",
+  Maintenance: "#d16d58",
+};
+
 const tooltipStyle = {
   backgroundColor: "#ffffff",
   border: "1px solid #dce4ed",
@@ -166,7 +186,17 @@ function Dashboard() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [mineStatusFilter, setMineStatusFilter] = useState("All sites");
+  const [selectedMineId, setSelectedMineId] = useState(mineSites[0].id);
+  const [mapZoom, setMapZoom] = useState(1);
+  const [showTerrain, setShowTerrain] = useState(true);
+  const [showMineLabels, setShowMineLabels] = useState(true);
   const slide = dashboardSlides[activeSlide];
+  const filteredMineSites = mineSites.filter(
+    (mine) => mineStatusFilter === "All sites" || mine.status === mineStatusFilter
+  );
+  const selectedMine =
+    filteredMineSites.find((mine) => mine.id === selectedMineId) || filteredMineSites[0];
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
@@ -197,6 +227,19 @@ function Dashboard() {
     setShowWater(true);
     setSelectedActivity(null);
     setSelectedReport(null);
+    setMineStatusFilter("All sites");
+    setSelectedMineId(mineSites[0].id);
+    setMapZoom(1);
+    setShowTerrain(true);
+    setShowMineLabels(true);
+  };
+
+  const changeMineStatusFilter = (status) => {
+    setMineStatusFilter(status);
+    const firstMatchingMine = mineSites.find(
+      (mine) => status === "All sites" || mine.status === status
+    );
+    if (firstMatchingMine) setSelectedMineId(firstMatchingMine.id);
   };
 
   const exportReports = () => {
@@ -323,6 +366,186 @@ function Dashboard() {
           <small>Across project categories</small>
         </article>
 
+      </section>
+
+      <section className="dashboard-panel dashboard-map-panel" aria-labelledby="mine-map-title">
+        <div className="panel-heading dashboard-map-heading">
+          <div>
+            <h2 id="mine-map-title">
+              <MapPinned size={17} /> Mine operations map
+            </h2>
+            <p>Illustrative site layout · sample locations and operating status</p>
+          </div>
+          <label className="mine-map-filter">
+            <span>Show</span>
+            <select
+              aria-label="Filter mine sites by operating status"
+              value={mineStatusFilter}
+              onChange={(event) => changeMineStatusFilter(event.target.value)}
+            >
+              <option>All sites</option>
+              <option>Operating</option>
+              <option>Monitoring</option>
+              <option>Maintenance</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="dashboard-map-layout">
+          <div className={`mine-map-viewport ${showTerrain ? "" : "terrain-hidden"}`}>
+            <div
+              className="mine-map-scene"
+              style={{ transform: `scale(${mapZoom})` }}
+              aria-label="Schematic map showing sample mine locations in eastern India"
+            >
+              <svg className="mine-map-art" viewBox="0 0 800 440" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <pattern id="mine-map-grid" width="56" height="56" patternUnits="userSpaceOnUse">
+                    <path d="M 56 0 L 0 0 0 56" fill="none" stroke="#91aaa0" strokeOpacity=".2" strokeWidth="1" />
+                  </pattern>
+                  <linearGradient id="mine-map-wash" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#dcebe1" />
+                    <stop offset="100%" stopColor="#c6ddd1" />
+                  </linearGradient>
+                </defs>
+                <rect width="800" height="440" fill="url(#mine-map-wash)" />
+                <rect width="800" height="440" fill="url(#mine-map-grid)" />
+                <g className="mine-map-contours" fill="none" stroke="#729b88" strokeOpacity=".3" strokeWidth="1.3">
+                  <path d="M-30 98 C96 20 154 175 277 105 S456 32 550 105 706 182 835 84" />
+                  <path d="M-28 122 C90 48 164 201 285 132 S452 64 545 132 719 207 832 109" />
+                  <path d="M-20 312 C90 233 184 362 291 296 S455 229 560 303 704 369 827 270" />
+                  <path d="M-20 338 C99 257 185 389 304 322 S460 252 563 328 709 397 830 296" />
+                  <path d="M115 -25 C166 50 89 111 150 182 S220 306 162 464" />
+                  <path d="M134 -26 C188 53 110 116 171 187 S242 311 182 463" />
+                  <path d="M615 -22 C556 49 645 122 581 196 S540 324 615 462" />
+                </g>
+                <g fill="none" stroke="#faf7e9" strokeWidth="8" strokeLinecap="round" opacity=".8">
+                  <path d="M55 386 C160 328 223 280 333 250 S514 199 748 54" />
+                  <path d="M122 28 C216 106 292 147 405 206 S597 303 751 400" />
+                </g>
+                <g fill="none" stroke="#cda96c" strokeWidth="2" strokeDasharray="5 7" opacity=".8">
+                  <path d="M55 386 C160 328 223 280 333 250 S514 199 748 54" />
+                  <path d="M122 28 C216 106 292 147 405 206 S597 303 751 400" />
+                </g>
+                <path d="M-15 225 C113 186 205 247 322 214 S520 180 620 224 735 250 821 214" fill="none" stroke="#74aeca" strokeWidth="4" strokeLinecap="round" opacity=".68" />
+                <g className="mine-map-regions" fill="#4a6b60" fontSize="12" fontFamily="Inter, sans-serif" fontWeight="700" letterSpacing="2">
+                  <text x="96" y="115">JHARKHAND</text>
+                  <text x="583" y="351">ODISHA</text>
+                  <text x="168" y="378">CHHATTISGARH</text>
+                </g>
+                <g className="mine-map-compass" fill="#4b6a5e">
+                  <path d="M750 28 L758 48 L750 44 L742 48 Z" />
+                  <text x="747" y="21" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="700">N</text>
+                </g>
+              </svg>
+              <div className="mine-map-markers" aria-label="Mine site markers">
+                {filteredMineSites.map((mine) => (
+                  <button
+                    type="button"
+                    key={mine.id}
+                    className={`mine-map-marker ${selectedMine?.id === mine.id ? "selected" : ""}`}
+                    style={{ left: `${mine.x}%`, top: `${mine.y}%`, "--mine-status-color": mineStatusColors[mine.status] }}
+                    aria-label={`${mine.name}, ${mine.status}${mine.production ? `, ${mine.production} thousand tonnes this month` : ""}`}
+                    aria-pressed={selectedMine?.id === mine.id}
+                    onClick={() => setSelectedMineId(mine.id)}
+                  >
+                    <span className="mine-map-marker-dot" />
+                    {showMineLabels && <span className="mine-map-marker-label">{mine.name}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mine-map-controls" aria-label="Map controls">
+              <button
+                type="button"
+                aria-label="Zoom in"
+                title="Zoom in"
+                disabled={mapZoom >= 1.5}
+                onClick={() => setMapZoom((zoom) => Math.min(1.5, Number((zoom + 0.1).toFixed(1))))}
+              >
+                <ZoomIn size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label="Zoom out"
+                title="Zoom out"
+                disabled={mapZoom <= 0.8}
+                onClick={() => setMapZoom((zoom) => Math.max(0.8, Number((zoom - 0.1).toFixed(1))))}
+              >
+                <ZoomOut size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label="Reset map zoom"
+                title="Reset map zoom"
+                onClick={() => setMapZoom(1)}
+              >
+                <RotateCcw size={15} />
+              </button>
+              <span className="mine-map-control-divider" />
+              <button
+                type="button"
+                className={showTerrain ? "active" : ""}
+                aria-label={`${showTerrain ? "Hide" : "Show"} terrain layer`}
+                aria-pressed={showTerrain}
+                title="Toggle terrain layer"
+                onClick={() => setShowTerrain((visible) => !visible)}
+              >
+                <Factory size={15} />
+              </button>
+              <button
+                type="button"
+                className={showMineLabels ? "active" : ""}
+                aria-label={`${showMineLabels ? "Hide" : "Show"} mine labels`}
+                aria-pressed={showMineLabels}
+                title="Toggle mine labels"
+                onClick={() => setShowMineLabels((visible) => !visible)}
+              >
+                <MapPinned size={15} />
+              </button>
+            </div>
+            <span className="mine-map-scale">Schematic view · not to scale</span>
+          </div>
+
+          <aside className="mine-map-details" aria-live="polite">
+            <div className="mine-map-site-count">
+              <span>PROJECT SITES</span>
+              <strong>{filteredMineSites.length}<small> / {mineSites.length}</small></strong>
+            </div>
+            {selectedMine ? (
+              <div className="mine-map-selected-site">
+                <span className="mine-site-status" style={{ "--mine-status-color": mineStatusColors[selectedMine.status] }}>
+                  <span /> {selectedMine.status}
+                </span>
+                <h3>{selectedMine.name}</h3>
+                <p>{selectedMine.region} · Sample project location</p>
+                <div className="mine-site-production">
+                  <span>Monthly output</span>
+                  <strong>{selectedMine.production ? `${selectedMine.production} kt` : "Paused"}</strong>
+                </div>
+                <div className="mine-map-links">
+                  <Link to="/analysis">View analysis <ChevronRight size={14} /></Link>
+                  <Link to="/reports">Reports <ChevronRight size={14} /></Link>
+                </div>
+              </div>
+            ) : (
+              <p className="mine-map-empty">No sites match this filter.</p>
+            )}
+            <div className="mine-map-legend" aria-label="Map status legend">
+              {Object.entries(mineStatusColors).map(([status, color]) => (
+                <button
+                  type="button"
+                  key={status}
+                  className={mineStatusFilter === status ? "active" : ""}
+                  aria-pressed={mineStatusFilter === status}
+                  onClick={() => changeMineStatusFilter(mineStatusFilter === status ? "All sites" : status)}
+                >
+                  <span style={{ background: color }} /> {status}
+                </button>
+              ))}
+            </div>
+          </aside>
+        </div>
       </section>
 
       <section className="dashboard-chart-grid">

@@ -204,7 +204,7 @@ function AIAssistant() {
       <div className="assistant-chat-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
         
         {/* Chat Box */}
-        <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '620px' }}>
+        <div className="assistant-chat-panel" style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '620px' }}>
           
           {/* Chat Header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -234,7 +234,7 @@ function AIAssistant() {
           </div>
 
           {/* Messages Container */}
-          <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', background: '#fafbfc' }}>
+          <div className="assistant-message-list" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', background: '#fafbfc' }}>
             {messages.map((msg) => (
               <div 
                 key={msg.id} 
@@ -291,7 +291,7 @@ function AIAssistant() {
           </div>
 
           {/* Input Bar */}
-          <form onSubmit={handleSendMessage} style={{ padding: '16px 20px', background: '#fff', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <form className="assistant-chat-input" onSubmit={handleSendMessage} style={{ padding: '16px 20px', background: '#fff', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 12px', gap: '10px' }}>
               <input 
                 type="text" 

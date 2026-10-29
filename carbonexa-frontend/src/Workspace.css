@@ -13,25 +13,31 @@
 
 .page-container {
   padding: 0 !important;
-  background: rgba(237, 244, 247, 0.86) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--workspace-canvas) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .app {
   background-color: var(--workspace-canvas);
-  background-image:
-    linear-gradient(rgba(237, 244, 247, 0.9), rgba(237, 244, 247, 0.9)),
-    url("./assets/bg.png");
+  background-image: none;
 }
 
 .sidebar {
   width: 252px;
   position: relative;
   overflow: hidden;
-  border-right-color: rgba(215, 227, 235, 0.95);
-  background-color: rgba(248, 251, 253, 0.96);
-  box-shadow: 8px 0 28px rgba(29, 59, 79, 0.075);
+  border-right-color: rgba(148, 163, 184, 0.22);
+  background-color: #f8fbfd;
+  background-image:
+    linear-gradient(rgba(248, 251, 253, 0.92), rgba(248, 251, 253, 0.92)),
+    url("./assets/sidebar-bg.png");
+  background-position: center bottom;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: 5px 0 18px rgba(29, 59, 79, 0.055);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   isolation: isolate;
 }
 
@@ -43,7 +49,7 @@
   width: 260px;
   height: 260px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(91, 183, 158, 0.14), transparent 70%);
+  background: none;
   content: "";
   pointer-events: none;
 }
@@ -77,8 +83,8 @@
   position: relative;
   height: 82px;
   flex: 0 0 82px;
-  border-bottom-color: rgba(215, 227, 235, 0.82);
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.72), rgba(232, 245, 242, 0.5));
+  border-bottom: 0;
+  background: #f8fbfd;
 }
 
 .logo-mark {
@@ -168,7 +174,7 @@
 
 .sidebar-bottom {
   padding: 12px;
-  background: linear-gradient(0deg, rgba(235, 246, 243, 0.45), transparent);
+  background: transparent;
 }
 
 .sidebar-bottom::before {
@@ -241,11 +247,17 @@
   height: 78px;
   gap: clamp(14px, 2vw, 26px);
   padding: 0 clamp(16px, 2.4vw, 30px);
-  border-bottom: 1px solid rgba(222, 243, 244, 0.16);
-  background-color: rgba(15, 54, 74, 0.94);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  background-color: #0f364a;
+  background-image:
+    linear-gradient(rgba(15, 54, 74, 0.9), rgba(15, 54, 74, 0.9)),
+    url("./assets/header-bg.png");
+  background-position: center 50%;
+  background-size: cover;
+  background-repeat: no-repeat;
   box-shadow: 0 7px 22px rgba(17, 47, 67, 0.18);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .menu-button {
@@ -1308,10 +1320,618 @@
   }
 }
 
+.header-icon.theme-toggle {
+  border: 1px solid rgba(224, 242, 242, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.header-icon.theme-toggle:hover {
+  border-color: rgba(169, 239, 208, 0.42);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.header-icon.theme-toggle:focus-visible {
+  outline: 3px solid #a9efd0;
+  outline-offset: 2px;
+}
+
+.app.dark-mode {
+  --workspace-ink: #e4edf4;
+  --workspace-muted: #a4b5c3;
+  --workspace-border: #344858;
+  --workspace-teal: #56c5a5;
+  --workspace-accent: #45b99b;
+  --workspace-accent-strong: #65d1b3;
+  --workspace-accent-soft: #1d3b3e;
+  --workspace-canvas: #12191d;
+  --workspace-surface: rgba(38, 50, 57, 0.84);
+  --workspace-glass-border: rgba(208, 225, 232, 0.22);
+  color: var(--workspace-ink);
+  background-color: var(--workspace-canvas);
+  background-image:
+    radial-gradient(ellipse at 12% 8%, rgba(94, 150, 158, 0.08), transparent 34%),
+    radial-gradient(ellipse at 88% 92%, rgba(49, 117, 103, 0.06), transparent 38%);
+  color-scheme: dark;
+}
+
+.app.dark-mode .page-container {
+  background: transparent !important;
+}
+
+.app.dark-mode .sidebar {
+  border-right: 1px solid rgba(148, 163, 184, 0.22);
+  background-color: rgba(18, 25, 29, 0.92);
+  background-image:
+    linear-gradient(rgba(18, 25, 29, 0.92), rgba(18, 25, 29, 0.92)),
+    url("./assets/sidebar-bg.png");
+  background-position: center bottom;
+  background-size: cover, 108% auto;
+  background-repeat: no-repeat;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 8px 0 28px rgba(0, 0, 0, 0.14);
+}
+
+.app.dark-mode .sidebar-logo {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.app.dark-mode .sidebar-logo > span,
+.app.dark-mode .nav-item {
+  color: #d7e3eb;
+}
+
+.app.dark-mode .sidebar-nav-label {
+  color: #8fa4b4;
+}
+
+.app.dark-mode .nav-item:hover {
+  border-color: #38524f;
+  color: #f0f7fa;
+  background: #263a45;
+}
+
+.app.dark-mode .nav-item > svg {
+  color: #a9bdc9;
+}
+
+.app.dark-mode .nav-item.active {
+  border-color: #315a54;
+  color: #8de0c2;
+  background: linear-gradient(100deg, #203b3d, #203c3b);
+}
+
+.app.dark-mode .nav-item.active > svg,
+.app.dark-mode .nav-item:hover > svg {
+  color: #8de0c2;
+}
+
+.app.dark-mode .sidebar-bottom {
+  background: transparent;
+}
+
+.app.dark-mode .header {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  background-color: rgba(18, 25, 29, 0.9);
+  background-image:
+    linear-gradient(rgba(18, 25, 29, 0.9), rgba(18, 25, 29, 0.9)),
+    url("./assets/header-bg.png");
+  background-position: center 50%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
+}
+
+.app.dark-mode .header-search-results {
+  border-color: var(--workspace-border);
+  background: #1b2935;
+}
+
+.app.dark-mode .header-search-results button {
+  color: var(--workspace-ink);
+}
+
+.app.dark-mode .header-search-results button:hover,
+.app.dark-mode .header-search-results button:focus-visible {
+  background: #263a45;
+}
+
+.app.dark-mode .notification-dot {
+  border-color: #173344;
+}
+
+.app.dark-mode .page-container,
+.app.dark-mode .workspace-page,
+.app.dark-mode .carbon-dashboard {
+  color: var(--workspace-ink);
+}
+
+.app.dark-mode .workspace-page h1,
+.app.dark-mode .workspace-page h2,
+.app.dark-mode .workspace-page h3,
+.app.dark-mode .workspace-page h4,
+.app.dark-mode .workspace-page label,
+.app.dark-mode .workspace-page .analysis-legend-name,
+.app.dark-mode .workspace-page .notification-title-row h3,
+.app.dark-mode .workspace-page .notifications-unread-count strong,
+.app.dark-mode .workspace-page .settings-storage-summary strong {
+  color: var(--workspace-ink) !important;
+}
+
+.app.dark-mode .workspace-page p,
+.app.dark-mode .workspace-page small,
+.app.dark-mode .workspace-page .settings-search-label,
+.app.dark-mode .workspace-page .settings-tab-list > button,
+.app.dark-mode .workspace-page .settings-retention-control label,
+.app.dark-mode .workspace-page .settings-option-row,
+.app.dark-mode .workspace-page .notification-content p,
+.app.dark-mode .workspace-page .notification-content time {
+  color: var(--workspace-muted);
+}
+
+.app.dark-mode .workspace-page select,
+.app.dark-mode .workspace-page input:not([type="checkbox"]):not([type="file"]),
+.app.dark-mode .workspace-page textarea,
+.app.dark-mode .workspace-page .settings-retention-control select {
+  border-color: #425765 !important;
+  color: #e4edf4 !important;
+  background-color: #172530 !important;
+}
+
+.app.dark-mode .workspace-page select option {
+  color: #e4edf4;
+  background: #172530;
+}
+
+.app.dark-mode .workspace-page .workspace-metrics > div,
+.app.dark-mode .workspace-page .reports-feature-grid > div,
+.app.dark-mode .workspace-page .analysis-chart-grid > div,
+.app.dark-mode .workspace-page .analysis-lower-grid > div,
+.app.dark-mode .workspace-page .reports-lower-grid > div,
+.app.dark-mode .workspace-page .archives-main-grid > div > div,
+.app.dark-mode .workspace-page .assistant-capability-grid > div,
+.app.dark-mode .workspace-page .assistant-chat-grid > div:first-child,
+.app.dark-mode .workspace-page .assistant-chat-grid > div:nth-child(2) > div,
+.app.dark-mode .workspace-page .settings-main-grid > div:first-child,
+.app.dark-mode .workspace-page .settings-main-grid > div:nth-child(2) > div,
+.app.dark-mode .workspace-page .documents-folder-card,
+.app.dark-mode .workspace-page .documents-file-panel,
+.app.dark-mode .workspace-page .archives-folder-panel,
+.app.dark-mode .workspace-page .archives-content-panel,
+.app.dark-mode .workspace-page .notification-card,
+.app.dark-mode .workspace-page .notifications-summary,
+.app.dark-mode .workspace-page .notifications-empty {
+  border-color: var(--workspace-glass-border) !important;
+  background-color: var(--workspace-surface) !important;
+  color: var(--workspace-ink);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.app.dark-mode .workspace-page [style*="background: rgb(255, 255, 255)"],
+.app.dark-mode .workspace-page [style*="background-color: rgb(255, 255, 255)"],
+.app.dark-mode .carbon-dashboard [style*="background: rgb(255, 255, 255)"] {
+  border-color: var(--workspace-border) !important;
+  color: var(--workspace-ink);
+  background: var(--workspace-surface) !important;
+}
+
+.app.dark-mode .workspace-page [style*="background: rgb(248, 250, 252)"],
+.app.dark-mode .workspace-page [style*="background: rgb(247, 250, 252)"],
+.app.dark-mode .workspace-page [style*="background: rgb(241, 245, 249)"],
+.app.dark-mode .carbon-dashboard [style*="background: rgb(248, 250, 252)"],
+.app.dark-mode .carbon-dashboard [style*="background: rgb(241, 245, 249)"] {
+  border-color: var(--workspace-border) !important;
+  color: var(--workspace-muted);
+  background: #22323f !important;
+}
+
+.app.dark-mode .workspace-page [style*="color: rgb(15, 23, 42)"],
+.app.dark-mode .workspace-page [style*="color: rgb(23, 32, 51)"],
+.app.dark-mode .workspace-page [style*="color: rgb(23, 50, 75)"],
+.app.dark-mode .workspace-page [style*="color: rgb(38, 61, 82)"],
+.app.dark-mode .workspace-page [style*="color: rgb(41, 54, 74)"],
+.app.dark-mode .workspace-page [style*="color: rgb(51, 65, 85)"],
+.app.dark-mode .workspace-page [style*="color: rgb(52, 75, 96)"],
+.app.dark-mode .workspace-page [style*="color: rgb(64, 87, 107)"],
+.app.dark-mode .workspace-page [style*="color: rgb(71, 85, 105)"],
+.app.dark-mode .workspace-page [style*="color: rgb(82, 101, 123)"],
+.app.dark-mode .workspace-page [style*="color: rgb(100, 116, 139)"],
+.app.dark-mode .workspace-page [style*="color: rgb(102, 123, 143)"],
+.app.dark-mode .workspace-page [style*="color: rgb(109, 121, 137)"],
+.app.dark-mode .carbon-dashboard [style*="color: rgb(15, 23, 42)"],
+.app.dark-mode .carbon-dashboard [style*="color: rgb(23, 50, 75)"],
+.app.dark-mode .carbon-dashboard [style*="color: rgb(51, 65, 85)"],
+.app.dark-mode .carbon-dashboard [style*="color: rgb(71, 85, 105)"],
+.app.dark-mode .carbon-dashboard [style*="color: rgb(82, 101, 123)"],
+.app.dark-mode .carbon-dashboard [style*="color: rgb(100, 116, 139)"] {
+  color: var(--workspace-ink) !important;
+}
+
+.app.dark-mode .workspace-page .settings-tab-list > button:hover {
+  background: #263a45 !important;
+}
+
+.app.dark-mode .workspace-page .settings-tab-list > button[aria-current="page"] {
+  border-color: #365b56 !important;
+  color: #8de0c2 !important;
+  background: #203b3d !important;
+}
+
+.app.dark-mode .workspace-page .settings-note,
+.app.dark-mode .workspace-page .settings-storage-summary,
+.app.dark-mode .workspace-page .analysis-geology-legend button,
+.app.dark-mode .workspace-page .reports-status-legend button,
+.app.dark-mode .workspace-page .notifications-filter button {
+  border-color: var(--workspace-border);
+  color: var(--workspace-muted);
+  background: #22323f;
+}
+
+.app.dark-mode .workspace-page .documents-modal,
+.app.dark-mode .workspace-page .documents-modal-backdrop .documents-modal {
+  border-color: var(--workspace-border);
+  color: var(--workspace-ink);
+  background: #1b2935;
+}
+
+.app.dark-mode .workspace-page .documents-edit-form input,
+.app.dark-mode .workspace-page .documents-edit-form select,
+.app.dark-mode .workspace-page .documents-secondary-action,
+.app.dark-mode .workspace-page .documents-starred-filter,
+.app.dark-mode .workspace-page .documents-sort-control,
+.app.dark-mode .workspace-page .notifications-actions button {
+  border-color: var(--workspace-border);
+  color: var(--workspace-ink);
+  background: #22323f;
+}
+
+.app.dark-mode .workspace-page .documents-starred-filter:hover,
+.app.dark-mode .workspace-page .documents-sort-control:hover {
+  border-color: #4a7569;
+  background: #294944;
+}
+
+.app.dark-mode .workspace-page .documents-sort-control > span {
+  color: var(--workspace-muted);
+}
+
+.app.dark-mode .workspace-page .documents-sort-control select {
+  color: var(--workspace-ink);
+}
+
+.app.dark-mode .workspace-page .documents-star-button:hover,
+.app.dark-mode .workspace-page .documents-modal-close:hover,
+.app.dark-mode .workspace-page .documents-action-button:hover {
+  background: #2a3c48;
+}
+
+.app.dark-mode .workspace-page .documents-folder-card > div:last-child,
+.app.dark-mode .workspace-page .archives-folder-panel > div:first-child,
+.app.dark-mode .workspace-page .archives-main-grid > div:first-child > div:nth-child(2) > div:first-child,
+.app.dark-mode .workspace-page .reports-chart-footnote,
+.app.dark-mode .workspace-page .documents-table-row,
+.app.dark-mode .workspace-page .archives-table-row {
+  border-color: #344858 !important;
+}
+
+.app.dark-mode .workspace-page .documents-table-heading,
+.app.dark-mode .workspace-page .archives-content-panel > .archives-table-scroll > .archives-table-row,
+.app.dark-mode .workspace-page .reports-table-grid-row,
+.app.dark-mode .workspace-page .analysis-table-grid-row {
+  color: #a8bbc8 !important;
+  background: #22323f !important;
+}
+
+.app.dark-mode .workspace-page .documents-table-row:not(.documents-table-heading):hover,
+.app.dark-mode .workspace-page .archives-table-body > .archives-table-row:hover,
+.app.dark-mode .workspace-page .reports-table-grid-row:hover,
+.app.dark-mode .workspace-page .analysis-table-grid-row:hover {
+  background: #263a45 !important;
+}
+
+.app.dark-mode .workspace-page .archives-toolbar,
+.app.dark-mode .workspace-page .documents-file-panel > div:first-child {
+  background: #1b2935;
+}
+
+.app.dark-mode .workspace-page .archives-content-panel > div:last-child {
+  background: #1b2935;
+}
+
+.app.dark-mode .workspace-page .assistant-message-bubble {
+  border-color: var(--workspace-border) !important;
+  color: var(--workspace-ink) !important;
+  background: #22323f !important;
+}
+
+.app.dark-mode .workspace-page .assistant-message-bubble.is-user {
+  color: #f2fbf8 !important;
+  background: #176f65 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-suggestion-buttons {
+  border-color: var(--workspace-border) !important;
+  background: #1b2935 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-panel {
+  border-color: var(--workspace-border) !important;
+  background: #1b2935 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-message-list {
+  background: #111d27 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-message-bubble:not(.is-user) {
+  border-color: #3a4e5d !important;
+  color: #e4edf4 !important;
+  background: #263744 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-input {
+  border-color: var(--workspace-border) !important;
+  background: #1b2935 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-input > div:first-child {
+  border-color: #425765 !important;
+  background: #172530 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-input input {
+  color: #e4edf4 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-suggestion-buttons button {
+  border-color: #3a5660 !important;
+  color: #c9e8e1 !important;
+  background: #223b43 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-suggestion-buttons button:hover {
+  border-color: #4a7569 !important;
+  background: #294944 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-panel > div:first-child {
+  border-color: var(--workspace-border) !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-panel > div:first-child > div:first-child > div:last-child > div:first-child {
+  color: var(--workspace-ink) !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-panel > div:first-child > div:last-child button:first-child {
+  border-color: #425765 !important;
+  color: var(--workspace-ink) !important;
+  background: #22323f !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-panel > div:first-child > div:last-child button:last-child {
+  color: var(--workspace-muted) !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-grid > div:nth-child(2) > div {
+  border-color: var(--workspace-border) !important;
+  background: #1b2935 !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-grid > div:nth-child(2) > div > div:nth-child(2) > div {
+  border-color: #3a4e5d !important;
+  background: #22323f !important;
+}
+
+.app.dark-mode .workspace-page .assistant-chat-grid > div:nth-child(2) > div > div:nth-child(2) > div > span {
+  color: var(--workspace-ink) !important;
+}
+
+.app.dark-mode .carbon-dashboard .dashboard-kpi,
+.app.dark-mode .carbon-dashboard .dashboard-panel {
+  border-color: var(--workspace-glass-border);
+  color: var(--workspace-ink);
+  background: var(--workspace-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.app.dark-mode .carbon-dashboard .dashboard-kpi > strong,
+.app.dark-mode .carbon-dashboard .panel-heading h2,
+.app.dark-mode .carbon-dashboard .dashboard-legend-row strong,
+.app.dark-mode .carbon-dashboard .dashboard-table td:first-child {
+  color: var(--workspace-ink);
+}
+
+.app.dark-mode .carbon-dashboard .dashboard-kpi > .kpi-label,
+.app.dark-mode .carbon-dashboard .dashboard-kpi > small,
+.app.dark-mode .carbon-dashboard .panel-heading p,
+.app.dark-mode .carbon-dashboard .selected-category {
+  color: var(--workspace-muted);
+}
+
+.app.dark-mode .carbon-dashboard .dashboard-chart {
+  background: linear-gradient(180deg, #192833, #1b2935);
+}
+
+.app.dark-mode .carbon-dashboard .dashboard-table-wrap {
+  border-color: var(--workspace-border);
+}
+
+.app.dark-mode .carbon-dashboard .dashboard-table th {
+  border-color: var(--workspace-border);
+  color: #b6c6d1;
+  background: #22323f;
+}
+
+.app.dark-mode .carbon-dashboard .dashboard-table td {
+  border-color: #2d414f;
+  color: #b3c2cd;
+}
+
+.app.dark-mode .carbon-dashboard .dashboard-table tbody tr:hover,
+.app.dark-mode .carbon-dashboard .dashboard-table tbody tr.report-selected {
+  background: #263a45;
+}
+
+.app.dark-mode .carbon-dashboard .chart-toggle,
+.app.dark-mode .carbon-dashboard select {
+  border-color: #425765;
+  color: #dce8ef;
+  background: #22323f;
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-details {
+  border-color: var(--workspace-border);
+  background: linear-gradient(155deg, #1b2c35, #1b2935 80%);
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-selected-site h3,
+.app.dark-mode .carbon-dashboard .mine-map-site-count strong {
+  color: var(--workspace-ink);
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-site-count,
+.app.dark-mode .carbon-dashboard .mine-site-production,
+.app.dark-mode .carbon-dashboard .mine-map-legend {
+  border-color: var(--workspace-border);
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-legend button {
+  color: var(--workspace-muted);
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-legend button:hover,
+.app.dark-mode .carbon-dashboard .mine-map-legend button.active {
+  border-color: #365b56;
+  color: #8de0c2;
+  background: #203b3d;
+}
+
+.app.dark-mode .recharts-cartesian-grid line {
+  stroke: #344858;
+}
+
+.app.dark-mode .carbon-dashboard .recharts-cartesian-axis-tick-value,
+.app.dark-mode .carbon-dashboard .recharts-legend-item-text {
+  fill: #a8bbc8;
+  color: #a8bbc8 !important;
+}
+
+.app.dark-mode .recharts-default-tooltip {
+  border-color: #425765 !important;
+  color: #e4edf4 !important;
+  background: #1b2935 !important;
+}
+
+.app.dark-mode .recharts-tooltip-item,
+.app.dark-mode .recharts-tooltip-label {
+  color: #e4edf4 !important;
+}
+
+.app.dark-mode .notifications-actions button,
+.app.dark-mode .notifications-filter button {
+  border-color: var(--workspace-border);
+  color: var(--workspace-muted);
+  background: #22323f;
+}
+
+.app.dark-mode .notifications-filter button.active,
+.app.dark-mode .notifications-actions button:hover:not(:disabled) {
+  border-color: #365b56;
+  color: #8de0c2;
+  background: #203b3d;
+}
+
+.app.dark-mode .notification-card:not(.is-read) {
+  background: #1c3135;
+}
+
+.app.dark-mode .notifications-empty {
+  border-color: var(--workspace-border);
+}
+
+.app.dark-mode .header-icon.theme-toggle {
+  color: #f7d77e;
+  border-color: rgba(224, 242, 242, 0.22);
+}
+
+.theme-storage-error {
+  position: relative;
+  z-index: 3;
+  padding: 9px 18px;
+  border-bottom: 1px solid #f1c7bb;
+  color: #8f3323;
+  background: #fff5f1;
+  font-size: 12px;
+}
+
+.app.dark-mode .theme-storage-error {
+  border-color: #70443d;
+  color: #ffd1c2;
+  background: #382723;
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-viewport {
+  border-color: #344858;
+  background: #253943;
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-art {
+  filter: brightness(0.64) saturate(0.8);
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-marker {
+  border-color: #49606c;
+  color: #e4edf4;
+  background: #1b2935;
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-controls,
+.app.dark-mode .carbon-dashboard .mine-map-scale {
+  border-color: #425765;
+  color: #c1d0da;
+  background: rgba(27, 41, 53, 0.96);
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-controls button {
+  color: #c1d0da;
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-controls button:hover,
+.app.dark-mode .carbon-dashboard .mine-map-controls button.active {
+  color: #8de0c2;
+  background: #203b3d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app.dark-mode *,
+  .app.dark-mode *::before,
+  .app.dark-mode *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .notifications-page {
   width: min(100%, 980px);
   margin: 0 auto;
   padding: 28px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 18px 48px rgba(20, 45, 62, 0.1);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.app.dark-mode .notifications-page {
+  border-color: rgba(151, 185, 202, 0.16);
+  background: rgba(24, 42, 54, 0.58);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.2);
 }
 
 .notifications-header,
@@ -1982,4 +2602,90 @@
   .archives-main-grid > div:first-child {
     position: static;
   }
+}
+
+.app.dark-mode .workspace-page .reports-chart-panel {
+  border-color: var(--workspace-border);
+  color: var(--workspace-ink);
+  background: radial-gradient(ellipse at 100% 0, rgba(22, 138, 120, 0.1), transparent 38%), var(--workspace-surface);
+}
+
+.app.dark-mode .workspace-page .reports-status-legend button,
+.app.dark-mode .workspace-page .analysis-selected-month,
+.app.dark-mode .carbon-dashboard .dashboard-legend-row {
+  border-color: var(--workspace-border);
+  color: var(--workspace-muted);
+  background: #22323f;
+}
+
+.app.dark-mode .workspace-page .reports-status-legend button.active,
+.app.dark-mode .workspace-page .reports-status-legend button:hover,
+.app.dark-mode .carbon-dashboard .dashboard-legend-row:hover,
+.app.dark-mode .carbon-dashboard .dashboard-legend-row.chosen {
+  border-color: #365b56;
+  color: #8de0c2;
+  background: #203b3d;
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-links a {
+  border-color: #365b56;
+  color: #8de0c2;
+  background: #203b3d;
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-links a:hover {
+  border-color: #4a7569;
+  background: #294944;
+}
+
+.app.dark-mode .carbon-dashboard .mine-map-art {
+  filter: brightness(0.42) saturate(0.8);
+}
+
+/* Dark mode section surfaces use the same translucent glass treatment as the navigation. */
+.app.dark-mode .workspace-page .settings-tabs-panel,
+.app.dark-mode .workspace-page .reports-chart-panel,
+.app.dark-mode .workspace-page .assistant-chat-panel,
+.app.dark-mode .workspace-page .assistant-chat-grid > div:nth-child(2) > div,
+.app.dark-mode .workspace-page .documents-modal,
+.app.dark-mode .carbon-dashboard .dashboard-kpi,
+.app.dark-mode .carbon-dashboard .dashboard-panel,
+.app.dark-mode .carbon-dashboard .dashboard-chart,
+.app.dark-mode .carbon-dashboard .dashboard-table-wrap,
+.app.dark-mode .carbon-dashboard .mine-map-details,
+.app.dark-mode .notifications-page {
+  border-color: var(--workspace-glass-border) !important;
+  background-color: var(--workspace-surface) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.app.dark-mode .workspace-page [style*="background: rgb(255, 255, 255)"]:not(button):not(input):not(select):not(textarea),
+.app.dark-mode .workspace-page [style*="background-color: rgb(255, 255, 255)"]:not(button):not(input):not(select):not(textarea),
+.app.dark-mode .carbon-dashboard [style*="background: rgb(255, 255, 255)"]:not(button):not(input):not(select):not(textarea),
+.app.dark-mode .carbon-dashboard [style*="background-color: rgb(255, 255, 255)"]:not(button):not(input):not(select):not(textarea) {
+  border-color: var(--workspace-glass-border) !important;
+  background: var(--workspace-surface) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.app.dark-mode .workspace-page [style*="background: rgb(248, 250, 252)"],
+.app.dark-mode .workspace-page [style*="background: rgb(247, 250, 252)"],
+.app.dark-mode .workspace-page [style*="background: rgb(241, 245, 249)"],
+.app.dark-mode .carbon-dashboard [style*="background: rgb(248, 250, 252)"],
+.app.dark-mode .carbon-dashboard [style*="background: rgb(241, 245, 249)"] {
+  background: rgba(226, 237, 243, 0.07) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.app.dark-mode .workspace-page .assistant-message-list,
+.app.dark-mode .workspace-page .assistant-suggestion-buttons,
+.app.dark-mode .workspace-page .assistant-chat-input,
+.app.dark-mode .workspace-page .archives-toolbar,
+.app.dark-mode .workspace-page .documents-file-panel > div:first-child,
+.app.dark-mode .workspace-page .archives-content-panel > div:last-child {
+  background: rgba(226, 237, 243, 0.055) !important;
 }

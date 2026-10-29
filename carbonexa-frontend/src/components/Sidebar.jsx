@@ -11,8 +11,6 @@ import {
   Bell
 } from 'lucide-react';
 
-// Import your vertical sidebar background image from the assets folder
-import sidebarBg from '../assets/sidebar-bg.png';
 import carbonexaLogo from '../assets/carbonexa-logo.png';
 
 function Sidebar({ collapsed, onNavigate }) {
@@ -22,14 +20,6 @@ function Sidebar({ collapsed, onNavigate }) {
     <aside 
       className={`sidebar${collapsed ? ' is-collapsed' : ''}`}
       aria-label="Main navigation"
-      style={{
-        // Semi-transparent white overlay so your menu text and icons stay sharp and readable
-        backgroundImage: `linear-gradient(rgba(248, 251, 253, 0.91), rgba(248, 251, 253, 0.91)), url(${sidebarBg})`,
-        backgroundSize: 'cover',
-        // 'center bottom' aligns the image so the dumper and excavators at the bottom are visible
-        backgroundPosition: 'center bottom',
-        backgroundRepeat: 'no-repeat'
-      }}
     >
       <div className="sidebar-logo" title={collapsed ? 'Carbonexa' : undefined}>
         <img className="logo-mark" src={carbonexaLogo} alt="Carbonexa logo" />

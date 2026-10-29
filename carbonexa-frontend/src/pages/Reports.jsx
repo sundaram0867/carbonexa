@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
-  FileText, CheckCircle2, Clock, FileEdit, Plus, Download, 
+  FileText, CheckCircle2, Clock, FileEdit, Plus, Download, Pencil,
   Search, BarChart2, PieChart, ArrowUpRight, X, Trash2, Calendar 
 } from 'lucide-react';
 import {
@@ -23,13 +23,32 @@ function Reports() {
   const [selectedMonthFilter, setSelectedMonthFilter] = useState(null);
   const [selectedYearFilter, setSelectedYearFilter] = useState('All');
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState(null);
+  const [reportDraft, setReportDraft] = useState({ name: '', desc: '', project: '', category: '', status: '' });
+  const [storedReports] = useState(() => {
+    try {
+      const savedReports = localStorage.getItem('carbonexa-reports');
+      if (!savedReports) return { records: null, error: '' };
+      const parsedReports = JSON.parse(savedReports);
+      const isValid = Array.isArray(parsedReports) && parsedReports.every((report) => (
+        (typeof report.id === 'number' || typeof report.id === 'string')
+        && ['name', 'desc', 'project', 'category', 'updated', 'year', 'month', 'owner', 'initials', 'status']
+          .every((key) => typeof report[key] === 'string')
+      ));
+      if (!isValid) throw new Error('Saved reports are invalid.');
+      return { records: parsedReports, error: '' };
+    } catch {
+      return { records: null, error: 'Saved report changes could not be loaded. Showing sample reports.' };
+    }
+  });
+  const [reportsStorageError, setReportsStorageError] = useState(storedReports.error);
 
   // New Report Form State
   const [reportName, setReportName] = useState('');
   const [reportCategory, setReportCategory] = useState('Geological');
   const [reportProject, setReportProject] = useState('Jharia Block');
 
-  const [reportsList, setReportsList] = useState([
+  const [reportsList, setReportsList] = useState(() => storedReports.records || [
     { 
       id: 1, 
       name: 'Geological Survey Report', 
@@ -97,6 +116,23 @@ function Reports() {
     },
   ]);
 
+  useEffect(() => {
+    const handleStorageStatus = (event) => setReportsStorageError(event.detail);
+    window.addEventListener('carbonexa-reports-storage-status', handleStorageStatus);
+    return () => window.removeEventListener('carbonexa-reports-storage-status', handleStorageStatus);
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('carbonexa-reports', JSON.stringify(reportsList));
+      window.dispatchEvent(new CustomEvent('carbonexa-reports-storage-status', { detail: '' }));
+    } catch {
+      window.dispatchEvent(new CustomEvent('carbonexa-reports-storage-status', {
+        detail: 'Report changes could not be saved in this browser.',
+      }));
+    }
+  }, [reportsList]);
+
   const [recentExports, setRecentExports] = useState([
     { name: 'Production_Report_Sep2026.pdf', time: '2 hours ago', size: '12.4 MB' },
     { name: 'EIA_Summary_Q3.xlsx', time: '5 hours ago', size: '4.8 MB' },
@@ -129,7 +165,31 @@ function Reports() {
 
   // Handle Delete Report
   const handleDeleteReport = (id) => {
-    setReportsList(reportsList.filter(rep => rep.id !== id));
+    setReportsList((currentReports) => currentReports.filter((report) => report.id !== id));
+  };
+
+  const openReportEditor = (report) => {
+    setEditingReport(report);
+    setReportDraft({
+      name: report.name,
+      desc: report.desc,
+      project: report.project,
+      category: report.category,
+      status: report.status,
+    });
+  };
+
+  const handleEditReportSubmit = (event) => {
+    event.preventDefault();
+    const updatedFields = Object.fromEntries(
+      Object.entries(reportDraft).map(([field, value]) => [field, value.trim()])
+    );
+    if (!editingReport || Object.values(updatedFields).some((value) => !value)) return;
+
+    setReportsList((currentReports) => currentReports.map((report) => (
+      report.id === editingReport.id ? { ...report, ...updatedFields } : report
+    )));
+    setEditingReport(null);
   };
 
   // Handle Generate Report Form Submit
@@ -233,6 +293,8 @@ function Reports() {
           </div>
         </div>
       </div>
+
+      {reportsStorageError && <p className="reports-storage-error" role="status">{reportsStorageError}</p>}
 
       {/* Top Metric Cards */}
       <div className="workspace-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
@@ -524,6 +586,15 @@ function Reports() {
                   <div>{getStatusBadge(rep.status)}</div>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => openReportEditor(rep)}
+                      title={`Edit ${rep.name}`}
+                      aria-label={`Edit ${rep.name}`}
+                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', color: '#146c6c', display: 'flex' }}
+                    >
+                      <Pencil size={15} />
+                    </button>
                     <button 
                       onClick={() => handleDeleteReport(rep.id)}
                       title="Delete report"
@@ -561,6 +632,42 @@ function Reports() {
         </div>
 
       </div>
+
+      {editingReport && (
+        <div className="documents-modal-backdrop">
+          <div className="documents-modal" role="dialog" aria-modal="true" aria-labelledby="edit-report-title">
+            <div className="documents-modal-heading">
+              <div>
+                <h3 id="edit-report-title">Edit report details</h3>
+                <p>Changes are saved in this browser.</p>
+              </div>
+              <button type="button" className="documents-modal-close" aria-label="Close edit report dialog" onClick={() => setEditingReport(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <form className="documents-edit-form" onSubmit={handleEditReportSubmit}>
+              <label htmlFor="edit-report-name">Report name</label>
+              <input id="edit-report-name" required value={reportDraft.name} onChange={(event) => setReportDraft({ ...reportDraft, name: event.target.value })} />
+              <label htmlFor="edit-report-description">Description</label>
+              <input id="edit-report-description" required value={reportDraft.desc} onChange={(event) => setReportDraft({ ...reportDraft, desc: event.target.value })} />
+              <label htmlFor="edit-report-project">Project / mine</label>
+              <input id="edit-report-project" required value={reportDraft.project} onChange={(event) => setReportDraft({ ...reportDraft, project: event.target.value })} />
+              <label htmlFor="edit-report-category">Category</label>
+              <select id="edit-report-category" value={reportDraft.category} onChange={(event) => setReportDraft({ ...reportDraft, category: event.target.value })}>
+                {['Geological', 'Mining', 'Environmental', 'Safety'].map((category) => <option key={category}>{category}</option>)}
+              </select>
+              <label htmlFor="edit-report-status">Status</label>
+              <select id="edit-report-status" value={reportDraft.status} onChange={(event) => setReportDraft({ ...reportDraft, status: event.target.value })}>
+                {['Approved', 'In Review', 'Draft'].map((status) => <option key={status}>{status}</option>)}
+              </select>
+              <div className="documents-modal-actions">
+                <button type="button" className="documents-secondary-action" onClick={() => setEditingReport(null)}>Cancel</button>
+                <button type="submit" className="workspace-primary-action">Save changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* --- MODAL: Generate Report --- */}
       {isGenerateOpen && (

@@ -1,28 +1,67 @@
-import { useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
   Tooltip, XAxis, YAxis
 } from 'recharts';
 import { 
   Leaf, Truck, BarChart2, Plus, 
-  Calendar, Trash2, X, FileText, CheckCircle2
+  Calendar, Trash2, X, FileText, CheckCircle2, Pencil
 } from 'lucide-react';
 
 function Analysis() {
+  const [storedAnalysisData] = useState(() => {
+    const result = { reports: null, chartOverrides: {}, errors: [] };
+    try {
+      const savedReports = localStorage.getItem('carbonexa-analysis-reports');
+      if (savedReports) {
+        const parsedReports = JSON.parse(savedReports);
+        const isValid = Array.isArray(parsedReports) && parsedReports.every((report) => (
+          (typeof report.id === 'number' || typeof report.id === 'string')
+          && ['name', 'desc', 'type', 'project', 'generated', 'status']
+            .every((key) => typeof report[key] === 'string')
+        ));
+        if (!isValid) throw new Error('Saved analysis reports are invalid.');
+        result.reports = parsedReports;
+      }
+    } catch {
+      result.errors.push('Saved analysis changes could not be loaded. Showing sample reports.');
+    }
+
+    try {
+      const savedChartData = localStorage.getItem('carbonexa-analysis-chart-data');
+      if (savedChartData) {
+        const parsedChartData = JSON.parse(savedChartData);
+        const isValid = parsedChartData && typeof parsedChartData === 'object' && !Array.isArray(parsedChartData)
+          && Object.values(parsedChartData).every((values) => (
+            values && ['coal', 'overburden', 'others'].every((key) => Number.isFinite(values[key]) && values[key] >= 0)
+          ));
+        if (!isValid) throw new Error('Saved chart data is invalid.');
+        result.chartOverrides = parsedChartData;
+      }
+    } catch {
+      result.errors.push('Saved chart changes could not be loaded. Showing sample values.');
+    }
+    return result;
+  });
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('September 2026');
   const [selectedMineFilter, setSelectedMineFilter] = useState('All Mines');
   const [activeBarIndex, setActiveBarIndex] = useState(7); // Default to August
   const [activeGeoIndex, setActiveGeoIndex] = useState(0); // Default to first item (Coal)
   const [hoveredEnvCard, setHoveredEnvCard] = useState(null);
-  const [toastMessage, setToastMessage] = useState('');
+  const [toastMessage, setToastMessage] = useState(storedAnalysisData.errors.join(' '));
+  const [editingAnalysis, setEditingAnalysis] = useState(null);
+  const [analysisDraft, setAnalysisDraft] = useState({ name: '', desc: '', type: '', project: '', status: '' });
+  const [editingChartData, setEditingChartData] = useState(false);
+  const [chartDataDraft, setChartDataDraft] = useState({ coal: '', overburden: '', others: '' });
+  const [monthlyBarOverrides, setMonthlyBarOverrides] = useState(storedAnalysisData.chartOverrides);
 
   // New Analysis Form State
   const [analysisName, setAnalysisName] = useState('');
   const [analysisType, setAnalysisType] = useState('Production');
   const [analysisProject, setAnalysisProject] = useState('Jharia Block');
 
-  const [analysisReports, setAnalysisReports] = useState([
+  const [analysisReports, setAnalysisReports] = useState(() => storedAnalysisData.reports || [
     { 
       id: 1, 
       name: 'Monthly Production Analysis', 
@@ -52,6 +91,32 @@ function Analysis() {
     },
   ]);
 
+  useEffect(() => {
+    const handleStorageError = (event) => setToastMessage(event.detail);
+    window.addEventListener('carbonexa-analysis-storage-error', handleStorageError);
+    return () => window.removeEventListener('carbonexa-analysis-storage-error', handleStorageError);
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('carbonexa-analysis-reports', JSON.stringify(analysisReports));
+    } catch {
+      window.dispatchEvent(new CustomEvent('carbonexa-analysis-storage-error', {
+        detail: 'Analysis report changes could not be saved in this browser.',
+      }));
+    }
+  }, [analysisReports]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('carbonexa-analysis-chart-data', JSON.stringify(monthlyBarOverrides));
+    } catch {
+      window.dispatchEvent(new CustomEvent('carbonexa-analysis-storage-error', {
+        detail: 'Analysis chart changes could not be saved in this browser.',
+      }));
+    }
+  }, [monthlyBarOverrides]);
+
   const mineWiseData = [
     { name: 'Jharia Block', output: '28,560', change: '+12%', status: 'Active', trendUp: true },
     { name: 'Bokaro Project', output: '24,320', change: '+8%', status: 'Active', trendUp: true },
@@ -70,7 +135,20 @@ function Analysis() {
     { month: 'Jul', val: 52, total: '35,000', coal: '23,400', overburden: '8,800', others: '2,800' },
     { month: 'Aug', val: 78, total: '42,560', coal: '28,340', overburden: '10,120', others: '4,100' },
     { month: 'Sep', val: 65, total: '38,900', coal: '25,800', overburden: '9,500', others: '3,600' },
-  ];
+  ].map((item) => {
+    const overrides = monthlyBarOverrides[item.month];
+    if (!overrides) return item;
+
+    const total = overrides.coal + overrides.overburden + overrides.others;
+    return {
+      ...item,
+      coal: overrides.coal.toLocaleString('en-US'),
+      overburden: overrides.overburden.toLocaleString('en-US'),
+      others: overrides.others.toLocaleString('en-US'),
+      total: total.toLocaleString('en-US'),
+      val: Math.min(100, Math.round(total / 550)),
+    };
+  });
 
   const miningChartData = monthlyBars.map((item) => ({
     month: item.month,
@@ -113,6 +191,61 @@ function Analysis() {
     setIsGenerateOpen(false);
     setAnalysisName('');
     setToastMessage('New analysis report generated successfully!');
+    setTimeout(() => setToastMessage(''), 2500);
+  };
+
+  const openAnalysisEditor = (report) => {
+    setEditingAnalysis(report);
+    setAnalysisDraft({
+      name: report.name,
+      desc: report.desc,
+      type: report.type,
+      project: report.project,
+      status: report.status,
+    });
+  };
+
+  const handleEditAnalysisSubmit = (event) => {
+    event.preventDefault();
+    const updatedFields = Object.fromEntries(
+      Object.entries(analysisDraft).map(([field, value]) => [field, value.trim()])
+    );
+    if (!editingAnalysis || Object.values(updatedFields).some((value) => !value)) return;
+
+    setAnalysisReports((currentReports) => currentReports.map((report) => (
+      report.id === editingAnalysis.id ? { ...report, ...updatedFields } : report
+    )));
+    setEditingAnalysis(null);
+    setToastMessage('Analysis report details updated.');
+    setTimeout(() => setToastMessage(''), 2500);
+  };
+
+  const openChartDataEditor = () => {
+    setChartDataDraft({
+      coal: String(Number(activeBarData.coal.replaceAll(',', ''))),
+      overburden: String(Number(activeBarData.overburden.replaceAll(',', ''))),
+      others: String(Number(activeBarData.others.replaceAll(',', ''))),
+    });
+    setEditingChartData(true);
+  };
+
+  const handleChartDataSubmit = (event) => {
+    event.preventDefault();
+    const values = Object.fromEntries(
+      Object.entries(chartDataDraft).map(([material, value]) => [material, Number(value)])
+    );
+    if (Object.values(chartDataDraft).some((value) => value.trim() === '')
+      || Object.values(values).some((value) => !Number.isFinite(value) || value < 0)) {
+      setToastMessage('Enter valid non-negative production values.');
+      return;
+    }
+
+    setMonthlyBarOverrides((currentOverrides) => ({
+      ...currentOverrides,
+      [activeBarData.month]: values,
+    }));
+    setEditingChartData(false);
+    setToastMessage(`${activeBarData.month} production values updated.`);
     setTimeout(() => setToastMessage(''), 2500);
   };
 
@@ -266,9 +399,14 @@ function Analysis() {
               </div>
               <span style={{ fontSize: '11px', color: '#64748b' }}>Monthly material volumes for {selectedMineFilter}</span>
             </div>
-            <div className="analysis-selected-month" aria-live="polite">
-              <strong>{activeBarData.month} 2026</strong>
-              <span>{activeBarData.total} tonnes total</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="analysis-selected-month" aria-live="polite">
+                <strong>{activeBarData.month} 2026</strong>
+                <span>{activeBarData.total} tonnes total</span>
+              </div>
+              <button type="button" className="documents-secondary-action" onClick={openChartDataEditor}>
+                <Pencil size={14} /> Edit values
+              </button>
             </div>
           </div>
 
@@ -437,7 +575,7 @@ function Analysis() {
             <span style={{ fontSize: '12px', color: '#0284c7', fontWeight: '500', cursor: 'pointer' }}>View All</span>
           </div>
 
-          <div className="analysis-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 40px', padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#64748b' }}>
+          <div className="analysis-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 64px', padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#64748b' }}>
             <div>Report Name</div>
             <div>Type</div>
             <div>Mine/Project</div>
@@ -451,7 +589,7 @@ function Analysis() {
               <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>No reports found.</div>
             ) : (
               analysisReports.map((rep) => (
-                <div key={rep.id} className="analysis-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 40px', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: '12px' }}>
+                <div key={rep.id} className="analysis-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 64px', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                     <FileText size={16} color="#0284c7" style={{ marginTop: '2px', flexShrink: 0 }} />
                     <div>
@@ -463,7 +601,10 @@ function Analysis() {
                   <div style={{ color: '#334155' }}>{rep.project}</div>
                   <div style={{ fontSize: '11px', color: '#64748b' }}>{rep.generated}</div>
                   <div>{getStatusBadge(rep.status)}</div>
-                  <div style={{ textAlign: 'right' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
+                    <button type="button" onClick={() => openAnalysisEditor(rep)} title="Edit report details" aria-label={`Edit ${rep.name}`} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#146c6c', padding: '2px' }}>
+                      <Pencil size={15} />
+                    </button>
                     <button onClick={() => handleDeleteReport(rep.id)} title="Delete" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444' }}>
                       <Trash2 size={15} />
                     </button>
@@ -509,6 +650,82 @@ function Analysis() {
         </div>
 
       </div>
+
+      {editingAnalysis && (
+        <div className="documents-modal-backdrop">
+          <div className="documents-modal" role="dialog" aria-modal="true" aria-labelledby="edit-analysis-title">
+            <div className="documents-modal-heading">
+              <div>
+                <h3 id="edit-analysis-title">Edit analysis report</h3>
+                <p>Update the report details shown in this workspace.</p>
+              </div>
+              <button type="button" className="documents-modal-close" aria-label="Close edit analysis dialog" onClick={() => setEditingAnalysis(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <form className="documents-edit-form" onSubmit={handleEditAnalysisSubmit}>
+              <label htmlFor="edit-analysis-name">Report name</label>
+              <input id="edit-analysis-name" required value={analysisDraft.name} onChange={(event) => setAnalysisDraft({ ...analysisDraft, name: event.target.value })} />
+              <label htmlFor="edit-analysis-description">Description</label>
+              <input id="edit-analysis-description" required value={analysisDraft.desc} onChange={(event) => setAnalysisDraft({ ...analysisDraft, desc: event.target.value })} />
+              <label htmlFor="edit-analysis-type">Category</label>
+              <select id="edit-analysis-type" value={analysisDraft.type} onChange={(event) => setAnalysisDraft({ ...analysisDraft, type: event.target.value })}>
+                {['Production', 'Environmental', 'Geological'].map((type) => <option key={type}>{type}</option>)}
+              </select>
+              <label htmlFor="edit-analysis-project">Mine / project</label>
+              <input id="edit-analysis-project" required value={analysisDraft.project} onChange={(event) => setAnalysisDraft({ ...analysisDraft, project: event.target.value })} />
+              <label htmlFor="edit-analysis-status">Status</label>
+              <select id="edit-analysis-status" value={analysisDraft.status} onChange={(event) => setAnalysisDraft({ ...analysisDraft, status: event.target.value })}>
+                {['Completed', 'In Review'].map((status) => <option key={status}>{status}</option>)}
+              </select>
+              <div className="documents-modal-actions">
+                <button type="button" className="documents-secondary-action" onClick={() => setEditingAnalysis(null)}>Cancel</button>
+                <button type="submit" className="workspace-primary-action">Save changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingChartData && (
+        <div className="documents-modal-backdrop">
+          <div className="documents-modal" role="dialog" aria-modal="true" aria-labelledby="edit-analysis-values-title">
+            <div className="documents-modal-heading">
+              <div>
+                <h3 id="edit-analysis-values-title">Edit {activeBarData.month} production</h3>
+                <p>Values are in tonnes and saved locally in this browser.</p>
+              </div>
+              <button type="button" className="documents-modal-close" aria-label="Close production editor" onClick={() => setEditingChartData(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <form className="documents-edit-form" onSubmit={handleChartDataSubmit}>
+              {[
+                ['coal', 'Coal'],
+                ['overburden', 'Overburden'],
+                ['others', 'Others'],
+              ].map(([key, label]) => (
+                <Fragment key={key}>
+                  <label htmlFor={`edit-analysis-${key}`}>{label} (tonnes)</label>
+                  <input
+                    id={`edit-analysis-${key}`}
+                    type="number"
+                    min="0"
+                    step="1"
+                    required
+                    value={chartDataDraft[key]}
+                    onChange={(event) => setChartDataDraft({ ...chartDataDraft, [key]: event.target.value })}
+                  />
+                </Fragment>
+              ))}
+              <div className="documents-modal-actions">
+                <button type="button" className="documents-secondary-action" onClick={() => setEditingChartData(false)}>Cancel</button>
+                <button type="submit" className="workspace-primary-action">Save values</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* --- MODAL: Generate Analysis --- */}
       {isGenerateOpen && (

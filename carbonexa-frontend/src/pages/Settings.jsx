@@ -20,7 +20,7 @@ const loadStoredSettings = () => {
   }
 };
 
-function Settings() {
+function Settings({ theme, onThemeChange }) {
   const [storedSettings] = useState(loadStoredSettings);
   const getSavedSetting = (key, fallback) => (
     typeof storedSettings.settings[key] === typeof fallback ? storedSettings.settings[key] : fallback
@@ -38,7 +38,6 @@ function Settings() {
       : defaultProfile;
   });
   const [language, setLanguage] = useState(() => getSavedSetting('language', 'English (India)'));
-  const [theme, setTheme] = useState(() => getSavedSetting('theme', 'Light'));
   const [twoFA, setTwoFA] = useState(() => getSavedSetting('twoFA', true));
   const [emailAlerts, setEmailAlerts] = useState(() => getSavedSetting('emailAlerts', true));
   const [smsAlerts, setSmsAlerts] = useState(() => getSavedSetting('smsAlerts', false));
@@ -285,7 +284,7 @@ function Settings() {
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '600', color: '#334155', display: 'block', marginBottom: '6px' }}>Theme</label>
-                  <select value={theme} onChange={(e) => setTheme(e.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'rgba(255,255,255,0.9)' }}>
+                  <select value={theme} onChange={(e) => onThemeChange(e.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'rgba(255,255,255,0.9)' }}>
                     <option value="Light">Light (Glass Frosted)</option>
                     <option value="Dark">Dark Mode</option>
                   </select>

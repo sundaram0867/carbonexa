@@ -529,6 +529,348 @@
   outline: none;
 }
 
+/* Mine operations map */
+
+.dashboard-map-panel {
+  margin-bottom: 20px;
+}
+
+.dashboard-map-heading {
+  align-items: center;
+  margin-bottom: 17px;
+}
+
+.mine-map-filter {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.mine-map-filter select {
+  min-width: 132px;
+}
+
+.dashboard-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(220px, 0.72fr);
+  gap: 16px;
+}
+
+.mine-map-viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid #d6e3dc;
+  border-radius: 11px;
+  background: #dcebe1;
+  isolation: isolate;
+}
+
+.mine-map-scene {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.mine-map-art,
+.mine-map-markers {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mine-map-art {
+  display: block;
+}
+
+.terrain-hidden .mine-map-art > rect:first-of-type {
+  fill: #e8eef0;
+}
+
+.terrain-hidden .mine-map-contours,
+.terrain-hidden .mine-map-regions {
+  opacity: 0;
+}
+
+.mine-map-markers {
+  pointer-events: none;
+}
+
+.mine-map-marker {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 155px;
+  padding: 4px 8px 4px 5px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  color: #274137;
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: 0 2px 8px rgba(31, 60, 49, 0.14);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.mine-map-marker:hover,
+.mine-map-marker.selected {
+  z-index: 1;
+  transform: translate(-50%, -50%) scale(1.05);
+  border-color: var(--mine-status-color);
+  box-shadow: 0 3px 12px rgba(31, 60, 49, 0.22);
+}
+
+.mine-map-marker:focus-visible,
+.mine-map-controls button:focus-visible,
+.mine-map-legend button:focus-visible,
+.mine-map-links a:focus-visible {
+  outline: 3px solid #168a78;
+  outline-offset: 2px;
+}
+
+.mine-map-marker-dot,
+.mine-site-status > span {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--mine-status-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mine-status-color) 20%, transparent);
+}
+
+.mine-map-controls {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid rgba(214, 227, 220, 0.9);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 3px 12px rgba(31, 60, 49, 0.12);
+}
+
+.mine-map-controls button {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  color: #52657b;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mine-map-controls button:hover,
+.mine-map-controls button.active {
+  color: #146c6c;
+  background: #e8f4ef;
+}
+
+.mine-map-controls button:disabled {
+  color: #aab4bf;
+  cursor: not-allowed;
+}
+
+.mine-map-controls button:disabled:hover {
+  background: transparent;
+}
+
+.mine-map-control-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: #dce4ed;
+}
+
+.mine-map-scale {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  padding: 5px 7px;
+  border: 1px solid rgba(214, 227, 220, 0.8);
+  border-radius: 5px;
+  color: #617468;
+  background: rgba(255, 255, 255, 0.88);
+  font-size: 9px;
+}
+
+.mine-map-details {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 15px;
+  border: 1px solid #e1e9f1;
+  border-radius: 10px;
+  background: linear-gradient(155deg, #f8fbfa 0%, #fff 80%);
+}
+
+.mine-map-site-count {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e3ebe7;
+}
+
+.mine-map-site-count > span {
+  color: #778897;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+}
+
+.mine-map-site-count strong {
+  color: #1b344e;
+  font-size: 17px;
+}
+
+.mine-map-site-count small {
+  color: #8795a3;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.mine-map-selected-site {
+  padding: 16px 0 13px;
+}
+
+.mine-site-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #52657b;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.mine-site-status > span {
+  width: 8px;
+  height: 8px;
+}
+
+.mine-map-selected-site h3 {
+  margin: 10px 0 3px;
+  color: #1b344e;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.mine-map-selected-site > p {
+  margin: 0;
+  color: #778897;
+  font-size: 10px;
+}
+
+.mine-site-production {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 17px;
+  padding: 11px 0;
+  border-top: 1px solid #e8eeeb;
+  border-bottom: 1px solid #e8eeeb;
+}
+
+.mine-site-production span {
+  color: #64748b;
+  font-size: 10px;
+}
+
+.mine-site-production strong {
+  color: #146c6c;
+  font-size: 14px;
+}
+
+.mine-map-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.mine-map-links a {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 8px;
+  border: 1px solid #dce9e4;
+  border-radius: 6px;
+  color: #146c6c;
+  background: #f3f9f6;
+  font-size: 10px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.mine-map-links a:hover {
+  border-color: #b6d9cd;
+  background: #e8f4ef;
+}
+
+.mine-map-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #e3ebe7;
+}
+
+.mine-map-legend button {
+  display: inline-flex;
+  min-height: 27px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: #64748b;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.mine-map-legend button:hover,
+.mine-map-legend button.active {
+  border-color: #d9eae3;
+  color: #294d41;
+  background: #edf6f1;
+}
+
+.mine-map-legend button > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.mine-map-empty {
+  margin: 18px 0;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 /* Interactive doughnut and legend */
 
 .dashboard-pie-layout {
@@ -706,6 +1048,16 @@
   }
 }
 
+@media (max-width: 900px) {
+  .dashboard-map-layout {
+    grid-template-columns: minmax(0, 1.4fr) minmax(205px, 0.8fr);
+  }
+
+  .mine-map-viewport {
+    min-height: 330px;
+  }
+}
+
 @media (max-width: 700px) {
   .carbon-dashboard {
     padding: 12px;
@@ -758,6 +1110,34 @@
 
   .dashboard-panel {
     padding: 13px;
+  }
+
+  .dashboard-map-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-map-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mine-map-viewport {
+    min-height: 300px;
+  }
+
+  .mine-map-details {
+    min-height: 0;
+  }
+
+  .mine-map-legend {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mine-map-legend button {
+    justify-content: center;
+    gap: 5px;
+    font-size: 9px;
   }
 
   .dashboard-chart {

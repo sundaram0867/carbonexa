@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Folder, FileText, Search, Star, 
   Trash2, X, Plus, HardDrive, 
-  FileSpreadsheet, Image as ImageIcon, FileCode, SlidersHorizontal, CheckCircle2 
+  FileSpreadsheet, Image as ImageIcon, FileCode, SlidersHorizontal, CheckCircle2, Pencil
 } from 'lucide-react';
 
 function Archives() {
@@ -12,7 +12,26 @@ function Archives() {
   const [selectedProject, setSelectedProject] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+  const [storedArchives] = useState(() => {
+    try {
+      const savedArchives = localStorage.getItem('carbonexa-archives');
+      if (!savedArchives) return { records: null, error: '' };
+      const parsedArchives = JSON.parse(savedArchives);
+      const isValid = Array.isArray(parsedArchives) && parsedArchives.every((archive) => (
+        (typeof archive.id === 'number' || typeof archive.id === 'string')
+        && ['name', 'desc', 'type', 'project', 'owner', 'initials', 'date', 'size', 'folder']
+          .every((key) => typeof archive[key] === 'string')
+        && typeof archive.starred === 'boolean'
+      ));
+      if (!isValid) throw new Error('Saved archives are invalid.');
+      return { records: parsedArchives, error: '' };
+    } catch {
+      return { records: null, error: 'Saved archive changes could not be loaded. Showing sample archives.' };
+    }
+  });
+  const [toastMessage, setToastMessage] = useState(storedArchives.error);
+  const [editingArchive, setEditingArchive] = useState(null);
+  const [archiveDraft, setArchiveDraft] = useState({ name: '', desc: '', type: 'PDF', project: '', folder: '' });
 
   // New Archive Form State
   const [newArchiveName, setNewArchiveName] = useState('');
@@ -32,7 +51,7 @@ function Archives() {
     { name: 'Others', count: 145 },
   ]);
 
-  const [archivesList, setArchivesList] = useState([
+  const [archivesList, setArchivesList] = useState(() => storedArchives.records || [
     { 
       id: 1, 
       name: 'Geological Survey Report 2024.pdf', 
@@ -139,6 +158,24 @@ function Archives() {
     },
   ]);
 
+  useEffect(() => {
+    const handleStorageStatus = (event) => {
+      if (event.detail) setToastMessage(event.detail);
+    };
+    window.addEventListener('carbonexa-archives-storage-error', handleStorageStatus);
+    return () => window.removeEventListener('carbonexa-archives-storage-error', handleStorageStatus);
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('carbonexa-archives', JSON.stringify(archivesList));
+    } catch {
+      window.dispatchEvent(new CustomEvent('carbonexa-archives-storage-error', {
+        detail: 'Archive changes could not be saved in this browser.',
+      }));
+    }
+  }, [archivesList]);
+
   // Handle Toggle Star
   const handleToggleStar = (id) => {
     setArchivesList(archivesList.map(item => item.id === id ? { ...item, starred: !item.starred } : item));
@@ -146,8 +183,34 @@ function Archives() {
 
   // Handle Delete Archive
   const handleDeleteArchive = (id) => {
-    setArchivesList(archivesList.filter(item => item.id !== id));
+    setArchivesList((currentArchives) => currentArchives.filter((item) => item.id !== id));
     setToastMessage('Archive deleted successfully.');
+    setTimeout(() => setToastMessage(''), 2500);
+  };
+
+  const openArchiveEditor = (archive) => {
+    setEditingArchive(archive);
+    setArchiveDraft({
+      name: archive.name,
+      desc: archive.desc,
+      type: archive.type,
+      project: archive.project,
+      folder: archive.folder,
+    });
+  };
+
+  const handleEditArchiveSubmit = (event) => {
+    event.preventDefault();
+    const updatedFields = Object.fromEntries(
+      Object.entries(archiveDraft).map(([field, value]) => [field, value.trim()])
+    );
+    if (!editingArchive || Object.values(updatedFields).some((value) => !value)) return;
+
+    setArchivesList((currentArchives) => currentArchives.map((archive) => (
+      archive.id === editingArchive.id ? { ...archive, ...updatedFields } : archive
+    )));
+    setEditingArchive(null);
+    setToastMessage('Archive details updated.');
     setTimeout(() => setToastMessage(''), 2500);
   };
 
@@ -480,6 +543,15 @@ function Archives() {
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      onClick={() => openArchiveEditor(item)}
+                      title={`Edit ${item.name}`}
+                      aria-label={`Edit ${item.name}`}
+                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#146c6c', padding: '2px' }}
+                    >
+                      <Pencil size={15} />
+                    </button>
                     <button 
                       onClick={() => handleDeleteArchive(item.id)}
                       title="Delete archive"
@@ -553,6 +625,42 @@ function Archives() {
       </div>
 
       {/* --- MODAL: Upload Archive --- */}
+      {editingArchive && (
+        <div className="documents-modal-backdrop">
+          <div className="documents-modal" role="dialog" aria-modal="true" aria-labelledby="edit-archive-title">
+            <div className="documents-modal-heading">
+              <div>
+                <h3 id="edit-archive-title">Edit archive details</h3>
+                <p>Changes are saved in this browser; the archived file contents are unchanged.</p>
+              </div>
+              <button type="button" className="documents-modal-close" aria-label="Close edit archive dialog" onClick={() => setEditingArchive(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <form className="documents-edit-form" onSubmit={handleEditArchiveSubmit}>
+              <label htmlFor="edit-archive-name">File name</label>
+              <input id="edit-archive-name" required value={archiveDraft.name} onChange={(event) => setArchiveDraft({ ...archiveDraft, name: event.target.value })} />
+              <label htmlFor="edit-archive-description">Description</label>
+              <input id="edit-archive-description" required value={archiveDraft.desc} onChange={(event) => setArchiveDraft({ ...archiveDraft, desc: event.target.value })} />
+              <label htmlFor="edit-archive-type">File type</label>
+              <select id="edit-archive-type" value={archiveDraft.type} onChange={(event) => setArchiveDraft({ ...archiveDraft, type: event.target.value })}>
+                {['PDF', 'Excel', 'Image', 'Word', 'PPT', 'ZIP'].map((type) => <option key={type}>{type}</option>)}
+              </select>
+              <label htmlFor="edit-archive-project">Project / mine</label>
+              <input id="edit-archive-project" required value={archiveDraft.project} onChange={(event) => setArchiveDraft({ ...archiveDraft, project: event.target.value })} />
+              <label htmlFor="edit-archive-folder">Folder</label>
+              <select id="edit-archive-folder" value={archiveDraft.folder} onChange={(event) => setArchiveDraft({ ...archiveDraft, folder: event.target.value })}>
+                {foldersList.filter((folder) => folder.name !== 'All Archives').map((folder) => <option key={folder.name}>{folder.name}</option>)}
+              </select>
+              <div className="documents-modal-actions">
+                <button type="button" className="documents-secondary-action" onClick={() => setEditingArchive(null)}>Cancel</button>
+                <button type="submit" className="workspace-primary-action">Save changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {isUploadOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', width: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>

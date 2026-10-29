@@ -32,6 +32,7 @@ function Documents() {
   const [editingFile, setEditingFile] = useState(null);
   const [editedFileName, setEditedFileName] = useState('');
   const [editedFileFolder, setEditedFileFolder] = useState('');
+  const [editedFileCategory, setEditedFileCategory] = useState('');
 
   const [folders, setFolders] = useState(() => initialLibrary.folders || defaultFolders);
   const [files, setFiles] = useState(() => initialLibrary.files || defaultFiles);
@@ -69,13 +70,14 @@ function Documents() {
     setEditingFile(file);
     setEditedFileName(file.name);
     setEditedFileFolder(file.folder);
+    setEditedFileCategory(file.category);
   };
 
   const handleEditFileSubmit = (event) => {
     event.preventDefault();
     const fileName = editedFileName.trim();
-    if (!editingFile || !fileName || !folders.some((folder) => folder.name === editedFileFolder)) {
-      showToast('Enter a file name and choose a valid folder.');
+    if (!editingFile || !fileName || !editedFileCategory || !folders.some((folder) => folder.name === editedFileFolder)) {
+      showToast('Enter a file name, category, and choose a valid folder.');
       return;
     }
 
@@ -90,7 +92,7 @@ function Documents() {
     }
 
     setFiles((currentFiles) => currentFiles.map((file) => (
-      file.id === editingFile.id ? { ...file, name: fileName, folder: editedFileFolder } : file
+      file.id === editingFile.id ? { ...file, name: fileName, folder: editedFileFolder, category: editedFileCategory } : file
     )));
     setFolders((currentFolders) => currentFolders.map((folder) => (
       folder.name === editedFileFolder || folder.name === editingFile.folder
@@ -532,7 +534,7 @@ function Documents() {
             <div className="documents-modal-heading">
               <div>
                 <h3 id="edit-file-title">Edit file details</h3>
-                <p>Rename this file or move it to another folder.</p>
+                <p>Update this file’s saved details. The stored document contents are not changed.</p>
               </div>
               <button
                 type="button"
@@ -560,6 +562,16 @@ function Documents() {
               >
                 {folders.map((folder) => (
                   <option key={folder.id} value={folder.name}>{folder.name}</option>
+                ))}
+              </select>
+              <label htmlFor="edit-document-category">Category</label>
+              <select
+                id="edit-document-category"
+                value={editedFileCategory}
+                onChange={(event) => setEditedFileCategory(event.target.value)}
+              >
+                {['Geological', 'Environmental', 'Mining', 'Safety', 'Operations'].map((category) => (
+                  <option key={category} value={category}>{category}</option>
                 ))}
               </select>
               <div className="documents-modal-actions">

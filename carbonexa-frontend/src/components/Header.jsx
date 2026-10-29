@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, Search, Bell, Settings as SettingsIcon, X } from 'lucide-react';
+import { Menu, Search, Bell, Settings as SettingsIcon, X, Moon, Sun } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import bgImage from '../assets/header-bg.png';
 import { loadNotifications, notificationsUpdatedEvent } from '../data/notifications';
 
 const searchablePages = [
@@ -15,7 +14,7 @@ const searchablePages = [
   { label: 'Notifications', path: '/notifications', description: 'Review recent updates' },
 ];
 
-function Header({ onMenuClick, isSidebarOpen, isSidebarCollapsed }) {
+function Header({ onMenuClick, isSidebarOpen, isSidebarCollapsed, theme, onThemeChange }) {
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
   const [query, setQuery] = useState('');
@@ -68,33 +67,6 @@ function Header({ onMenuClick, isSidebarOpen, isSidebarCollapsed }) {
 
   return (
     <header className="header" style={{ position: 'relative', overflow: 'visible' }}>
-      <div 
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 0,
-          pointerEvents: 'none',
-          background: 'linear-gradient(rgba(10, 35, 51, 0.52), rgba(10, 35, 51, 0.52))'
-        }}
-      >
-        <img 
-          src={bgImage} 
-          alt="Header Background" 
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            // Shifted slightly lower to bring the upper truck/machinery into view
-            objectPosition: 'right 20%', 
-            opacity: 0.28,
-            pointerEvents: 'none'
-          }}
-        />
-      </div>
-
       <button
         type="button"
         className="menu-button" 
@@ -158,6 +130,19 @@ function Header({ onMenuClick, isSidebarOpen, isSidebarCollapsed }) {
       </div>
 
       <div className="header-actions" style={{ position: 'relative', zIndex: 1 }}>
+        <button
+          type="button"
+          className="header-icon theme-toggle"
+          aria-label={`Switch to ${theme === 'Dark' ? 'light' : 'dark'} mode`}
+          aria-pressed={theme === 'Dark'}
+          title={`Switch to ${theme === 'Dark' ? 'light' : 'dark'} mode`}
+          onClick={() => {
+            const nextTheme = theme === 'Dark' ? 'Light' : 'Dark';
+            onThemeChange(nextTheme);
+          }}
+        >
+          {theme === 'Dark' ? <Sun size={19} /> : <Moon size={19} />}
+        </button>
         <Link 
           to="/notifications" 
           className="header-icon" 
