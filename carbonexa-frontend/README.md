@@ -140,3 +140,30 @@ Open the URL Vite prints. If port 5173 is occupied, Vite selects an available po
 The PHP API exposes `GET /api/health` and `POST /api/chat`. Chat requests accept `{ "message": "...", "history": [] }`; successful responses contain `{ "text": "..." }`. Chat history is currently transient React state and is not stored in MySQL.
 
 See Google's [Gemini API reference](https://ai.google.dev/api) and [API key safety guide](https://ai.google.dev/gemini-api/docs/api-key).
+
+## Reports module
+
+The Reports page preserves the current activity/status charts, report templates, report list, KPI cards, and recent exports. It adds a three-step report builder, editable/reorderable sections, preview, report review workflow, comments/history, version snapshots, report comparison, schedules, and PDF/Excel/CSV downloads. Report records and schedules use browser-local storage in mock mode; they are not shared across browsers or users. Schedules are configuration only: this frontend does not run background jobs. PDF and Excel files are generated in the browser from the report metadata and entered text. No live production, environmental, or geological metrics are implied by an empty data section. The AI assistant controls show clearly marked example guidance and do not call an AI model.
+
+The report service is `src/services/reportService.js`; report examples and built-in templates are in `src/data/reportMockData.js`. To enable PHP mode, the backend should implement these routes. All JSON responses use `{ "data": ... }`; errors use `{ "error": "Readable error" }` and an appropriate HTTP status.
+
+| Method | Expected endpoint | Purpose |
+| --- | --- | --- |
+| GET, POST | `/api/reports` | List reports or create a draft report |
+| GET, PUT, DELETE | `/api/reports/{id}` | Read, update/version, or delete a report |
+| GET | `/api/reports/{id}/versions` | List immutable report version snapshots |
+| POST | `/api/reports/{id}/versions/{versionId}/restore` | Restore a prior version as a new current version |
+| POST | `/api/reports/{id}/submit` | Submit a draft with `{ "reviewer": "..." }` |
+| POST | `/api/reports/{id}/review` | Start review with `{ "reviewer": "..." }` |
+| POST | `/api/reports/{id}/approve` | Approve with `{ "reviewer": "...", "comment": "..." }` |
+| POST | `/api/reports/{id}/reject` | Reject with `{ "reviewer": "...", "comment": "..." }` |
+| POST | `/api/reports/{id}/comments` | Add `{ "reviewer": "...", "comment": "..." }` |
+| POST | `/api/reports/compare` | Compare `{ "reportIds": ["...", "..."] }` |
+| GET, POST | `/api/reports/schedules` | List or create schedule configurations |
+| PATCH | `/api/reports/schedules/{id}` | Activate/deactivate a schedule |
+| DELETE | `/api/reports/schedules/{id}` | Remove a schedule configuration |
+| GET, POST | `/api/reports/templates` | List or save custom templates |
+| POST | `/api/reports/export` | Create export with `{ "reportIds": ["..."], "format": "pdf|excel|csv" }`; return `{ "data": { "downloadUrl": "...", "filename": "..." } }` |
+| GET | `/api/reports/exports` | List recent export metadata |
+
+Report records should retain stable IDs and include `name`, `reportType`, `category`, `project`, `periodStart`, `periodEnd`, `preparedBy`, `department`, `desc`, `sections`, `charts`, `observations`, `recommendations`, `status`, `reviewer`, `reviewHistory`, `comments`, `versions`, `createdAt`, and `updatedAt`. Valid statuses are `Draft`, `Pending Review`, `In Review`, `Approved`, and `Rejected`. The backend must enforce reviewer permissions, preserve an audit trail, implement actual scheduled execution and report generation, and provide verified project data before production use. Switching `VITE_DATA_MODE=php` requires these endpoints; the PHP router currently in this repository does not implement report routes.
