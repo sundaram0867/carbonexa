@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   FileText, CheckCircle2, Clock, FileEdit, Plus, Download, Pencil,
   Search, BarChart2, PieChart, ArrowUpRight, X, Trash2, Calendar 
@@ -17,7 +18,8 @@ import {
 } from 'recharts';
 
 function Reports() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('All');
   const [selectedMonthFilter, setSelectedMonthFilter] = useState(null);
@@ -42,6 +44,8 @@ function Reports() {
     }
   });
   const [reportsStorageError, setReportsStorageError] = useState(storedReports.error);
+  const searchParam = searchParams.get('search') || '';
+  const actionParam = searchParams.get('action');
 
   // New Report Form State
   const [reportName, setReportName] = useState('');
@@ -121,6 +125,22 @@ function Reports() {
     window.addEventListener('carbonexa-reports-storage-status', handleStorageStatus);
     return () => window.removeEventListener('carbonexa-reports-storage-status', handleStorageStatus);
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearchQuery(searchParam), 0);
+    return () => window.clearTimeout(timer);
+  }, [searchParam]);
+
+  useEffect(() => {
+    if (actionParam !== 'generate') return;
+    const timer = window.setTimeout(() => {
+      setIsGenerateOpen(true);
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('action');
+      setSearchParams(nextParams, { replace: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [actionParam, searchParams, setSearchParams]);
 
   useEffect(() => {
     try {

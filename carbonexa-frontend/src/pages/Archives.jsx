@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Folder, FileText, Search, Star, 
   Trash2, X, Plus, HardDrive, 
@@ -6,7 +7,8 @@ import {
 } from 'lucide-react';
 
 function Archives() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [selectedFolder, setSelectedFolder] = useState('All Archives');
   const [selectedType, setSelectedType] = useState('All');
   const [selectedProject, setSelectedProject] = useState('All');
@@ -32,6 +34,7 @@ function Archives() {
   const [toastMessage, setToastMessage] = useState(storedArchives.error);
   const [editingArchive, setEditingArchive] = useState(null);
   const [archiveDraft, setArchiveDraft] = useState({ name: '', desc: '', type: 'PDF', project: '', folder: '' });
+  const searchParam = searchParams.get('search') || '';
 
   // New Archive Form State
   const [newArchiveName, setNewArchiveName] = useState('');
@@ -157,6 +160,11 @@ function Archives() {
       folder: 'Regulatory Documents'
     },
   ]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearchQuery(searchParam), 0);
+    return () => window.clearTimeout(timer);
+  }, [searchParam]);
 
   useEffect(() => {
     const handleStorageStatus = (event) => {

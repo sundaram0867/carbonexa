@@ -1,6 +1,6 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer,
   LineChart,
@@ -33,10 +33,14 @@ import {
   ZoomOut,
   RotateCcw,
   Factory,
+  BriefcaseBusiness,
+  Wallet,
 } from "lucide-react";
 import "./Dashboard.css";
 import projectImage from "../assets/header-bg.png";
 import sunriseMineImage from "../assets/bg.png";
+import GoogleMineMap from "../components/GoogleMineMap.jsx";
+import OpenStreetMapMineMap from "../components/OpenStreetMapMineMap.jsx";
 
 const dashboardSlides = [
   {
@@ -46,17 +50,17 @@ const dashboardSlides = [
     description: "Monitor mining production, environmental performance, and reports.",
     action: "Explore project data",
     path: "/analysis",
-    badge: "Current project",
+    badge: "Portfolio sample",
     position: "center 54%",
   },
   {
     image: sunriseMineImage,
     eyebrow: "SUSTAINABLE OPERATIONS",
     title: "Track production. Protect the environment.",
-    description: "Review illustrative production and environmental trends across your projects.",
+    description: "Review illustrative production and environmental trends across sample mine sites.",
     action: "View environmental trends",
     path: "/analysis",
-    badge: "Environmental trends",
+    badge: "Environmental demo",
     position: "center 60%",
   },
 ];
@@ -157,12 +161,12 @@ const recentReports = [
 ];
 
 const mineSites = [
-  { id: "jharia", name: "Jharia Block", region: "Jharkhand", status: "Operating", production: 148, x: 55, y: 38 },
-  { id: "bokaro", name: "Bokaro Project", region: "Jharkhand", status: "Operating", production: 126, x: 68, y: 30 },
-  { id: "north-karanpura", name: "North Karanpura", region: "Jharkhand", status: "Monitoring", production: 92, x: 43, y: 52 },
-  { id: "talcher", name: "Talcher Coalfield", region: "Odisha", status: "Operating", production: 174, x: 70, y: 68 },
-  { id: "ib-valley", name: "Ib Valley", region: "Odisha", status: "Maintenance", production: 0, x: 84, y: 53 },
-  { id: "mand-raigarh", name: "Mand-Raigarh", region: "Chhattisgarh", status: "Monitoring", production: 78, x: 31, y: 69 },
+  { id: "jharia", name: "Jharia Block", region: "Jharkhand", status: "Operating", production: 148, x: 55, y: 38, lat: 23.75, lng: 86.42 },
+  { id: "bokaro", name: "Bokaro Project", region: "Jharkhand", status: "Operating", production: 126, x: 68, y: 30, lat: 23.67, lng: 86.15 },
+  { id: "north-karanpura", name: "North Karanpura", region: "Jharkhand", status: "Monitoring", production: 92, x: 43, y: 52, lat: 23.80, lng: 84.90 },
+  { id: "talcher", name: "Talcher Coalfield", region: "Odisha", status: "Operating", production: 174, x: 70, y: 68, lat: 20.95, lng: 85.23 },
+  { id: "ib-valley", name: "Ib Valley", region: "Odisha", status: "Maintenance", production: 0, x: 84, y: 53, lat: 21.72, lng: 83.88 },
+  { id: "mand-raigarh", name: "Mand-Raigarh", region: "Chhattisgarh", status: "Monitoring", production: 78, x: 31, y: 69, lat: 22.22, lng: 83.40 },
 ];
 
 const mineStatusColors = {
@@ -179,11 +183,21 @@ const tooltipStyle = {
   fontSize: "12px",
 };
 
-function Dashboard() {
+function Dashboard({ activeProject, projects = [] }) {
+  const navigate = useNavigate();
   const [period, setPeriod] = useState("6");
   const [showTarget, setShowTarget] = useState(true);
   const [showWater, setShowWater] = useState(true);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [selectedProductionMonth, setSelectedProductionMonth] = useState(null);
+  const [selectedEnvironmentMonth, setSelectedEnvironmentMonth] = useState(null);
+  const [selectedReportMonth, setSelectedReportMonth] = useState(null);
+  const [visibleReportSeries, setVisibleReportSeries] = useState({
+    geological: true,
+    mining: true,
+    environment: true,
+    safety: true,
+  });
   const [selectedReport, setSelectedReport] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [mineStatusFilter, setMineStatusFilter] = useState("All sites");
@@ -191,12 +205,26 @@ function Dashboard() {
   const [mapZoom, setMapZoom] = useState(1);
   const [showTerrain, setShowTerrain] = useState(true);
   const [showMineLabels, setShowMineLabels] = useState(true);
+  const [googleMapsUnavailable, setGoogleMapsUnavailable] = useState(false);
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() || "";
+  const googleMapsRequested = import.meta.env.VITE_MAP_PROVIDER?.trim().toLowerCase() === "google";
+  const showGoogleMap = googleMapsRequested && Boolean(googleMapsApiKey) && !googleMapsUnavailable;
   const slide = dashboardSlides[activeSlide];
-  const filteredMineSites = mineSites.filter(
-    (mine) => mineStatusFilter === "All sites" || mine.status === mineStatusFilter
+  const filteredMineSites = useMemo(
+    () => mineSites.filter(
+      (mine) => mineStatusFilter === "All sites" || mine.status === mineStatusFilter
+    ),
+    [mineStatusFilter]
   );
   const selectedMine =
     filteredMineSites.find((mine) => mine.id === selectedMineId) || filteredMineSites[0];
+  const liveProjects = projects.filter((project) => !project.archived);
+  const activeProjectCount = liveProjects.filter((project) => ['Operating', 'Monitoring', 'Maintenance', 'On Hold'].includes(project.status)).length;
+  const developmentProjectCount = liveProjects.filter((project) => ['Planning', 'Under Development'].includes(project.status)).length;
+  const completedProjectCount = liveProjects.filter((project) => ['Completed', 'Closed'].includes(project.status)).length;
+  const delayedProjectCount = liveProjects.filter((project) => project.status === 'Delayed').length;
+  const combinedProductionTarget = liveProjects.reduce((total, project) => total + (Number(project.productionTarget) || 0), 0);
+  const combinedProjectCost = liveProjects.reduce((total, project) => total + (Number(project.estimatedCost) || 0), 0);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
@@ -221,17 +249,40 @@ function Dashboard() {
     [period]
   );
 
+  const selectedProduction = visibleProduction.find(
+    (item) => item.month === selectedProductionMonth
+  );
+  const selectedEnvironment = visibleEnvironment.find(
+    (item) => item.month === selectedEnvironmentMonth
+  );
+  const selectedReportActivity = visibleReports.find(
+    (item) => item.month === selectedReportMonth
+  );
+
   const resetDashboard = () => {
     setPeriod("6");
     setShowTarget(true);
     setShowWater(true);
     setSelectedActivity(null);
+    setSelectedProductionMonth(null);
+    setSelectedEnvironmentMonth(null);
+    setSelectedReportMonth(null);
+    setVisibleReportSeries({
+      geological: true,
+      mining: true,
+      environment: true,
+      safety: true,
+    });
     setSelectedReport(null);
     setMineStatusFilter("All sites");
     setSelectedMineId(mineSites[0].id);
     setMapZoom(1);
     setShowTerrain(true);
     setShowMineLabels(true);
+  };
+
+  const selectReportRow = (reportId) => {
+    setSelectedReport((current) => current === reportId ? null : reportId);
   };
 
   const changeMineStatusFilter = (status) => {
@@ -263,7 +314,7 @@ function Dashboard() {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = "carbonexa-recent-reports.csv";
+    link.download = "carbonexa-sample-reports.csv";
     link.click();
 
     URL.revokeObjectURL(url);
@@ -299,10 +350,10 @@ function Dashboard() {
           <span className="dashboard-prototype-badge">
             <span /> {slide.badge}
           </span>
-          <button className="chart-toggle dashboard-reset-button" onClick={resetDashboard}>
+          <button type="button" className="chart-toggle dashboard-reset-button" onClick={resetDashboard}>
             <RefreshCw size={14} /> Reset
           </button>
-          <button className="chart-toggle dashboard-export-button" onClick={exportReports}>
+          <button type="button" className="chart-toggle dashboard-export-button" onClick={exportReports}>
             <Download size={14} /> Export Reports
           </button>
         </div>
@@ -328,53 +379,83 @@ function Dashboard() {
         </div>
       </header>
 
-      <section className="dashboard-kpis">
-        <article className="dashboard-kpi kpi-projects">
+      <section className="dashboard-context" aria-labelledby="dashboard-context-title">
+        <div className="dashboard-context-project">
+          <span className="dashboard-context-icon"><BriefcaseBusiness size={19} /></span>
+          <div className="dashboard-context-details">
+            <span className="dashboard-context-eyebrow">ACTIVE WORKSPACE PROJECT</span>
+            <h2 id="dashboard-context-title">{activeProject?.name || "No project selected"}</h2>
+            <p>
+              {activeProject
+                ? [activeProject.site, activeProject.region, activeProject.commodity].filter(Boolean).join(" · ") || "Add site and commodity details in Projects"
+                : "Create a project profile to identify the project you are working on."}
+            </p>
+          </div>
+          {activeProject && <span className="dashboard-context-status">{activeProject.status}</span>}
+          <Link className="dashboard-context-link" to="/projects">
+            {activeProject ? "Manage project" : "Create project"} <ChevronRight size={15} />
+          </Link>
+        </div>
+        <p className="dashboard-data-disclaimer" role="note">
+          <strong>Important:</strong> The project totals below use saved, non-archived project profiles. The charts, report list, and map are illustrative sample data—not live readings and not linked to a project profile.
+        </p>
+      </section>
+
+      <section className="dashboard-kpis" aria-label="Key performance indicators">
+        <button
+          type="button"
+          className="dashboard-kpi kpi-projects"
+          aria-label="Open project directory"
+          onClick={() => navigate("/projects")}
+        >
           <span className="kpi-icon kpi-blue">
             <Layers size={21} />
           </span>
-          <span className="kpi-label">Active Projects</span>
-          <strong>24</strong>
-          <small>Mining projects tracked</small>
-        </article>
+          <span className="kpi-label">Projects in portfolio</span>
+          <strong>{liveProjects.length}</strong>
+          <small>{activeProjectCount} active · {developmentProjectCount} in development · {completedProjectCount} completed · {delayedProjectCount} delayed</small>
+          <span className="kpi-action-hint">Manage projects <ChevronRight size={13} /></span>
+        </button>
 
-        <article className="dashboard-kpi kpi-production">
+        <button
+          type="button"
+          className="dashboard-kpi kpi-production"
+          aria-label="Open project directory to review production targets"
+          onClick={() => navigate("/projects")}
+        >
           <span className="kpi-icon kpi-green">
             <Activity size={21} />
           </span>
-          <span className="kpi-label">June Production</span>
-          <strong>5,700 <em>tonnes</em></strong>
-          <small>Illustrative target: 6,200 tonnes</small>
-          <span
-            className="kpi-progress"
-            role="progressbar"
-            aria-label="June production against illustrative target"
-            aria-valuenow="92"
-            aria-valuemin="0"
-            aria-valuemax="100"
-          >
-            <span />
-          </span>
-        </article>
+          <span className="kpi-label">Combined annual production target</span>
+          <strong>{combinedProductionTarget ? new Intl.NumberFormat().format(combinedProductionTarget) : "—"} <em>MT</em></strong>
+          <small>Across {liveProjects.length} non-archived project profiles · target, not actual output</small>
+          <span className="kpi-action-hint">Review project targets <ChevronRight size={13} /></span>
+        </button>
 
-        <article className="dashboard-kpi kpi-reports">
+        <button
+          type="button"
+          className="dashboard-kpi kpi-reports"
+          aria-label="Open project directory to review estimated costs"
+          onClick={() => navigate("/projects")}
+        >
           <span className="kpi-icon kpi-purple">
-            <FileText size={21} />
+            <Wallet size={21} />
           </span>
-          <span className="kpi-label">Reports Generated</span>
-          <strong>186</strong>
-          <small>Across project categories</small>
-        </article>
+          <span className="kpi-label">Estimated project cost</span>
+          <strong>{combinedProjectCost ? new Intl.NumberFormat().format(combinedProjectCost) : "—"} <em>₹ crore</em></strong>
+          <small>Combined estimate · not actual expenditure</small>
+          <span className="kpi-action-hint">Review project estimates <ChevronRight size={13} /></span>
+        </button>
 
       </section>
 
-      <section className="dashboard-panel dashboard-map-panel" aria-labelledby="mine-map-title">
+      <section id="dashboard-mine-map" className="dashboard-panel dashboard-map-panel" aria-labelledby="mine-map-title">
         <div className="panel-heading dashboard-map-heading">
           <div>
             <h2 id="mine-map-title">
               <MapPinned size={17} /> Mine operations map
             </h2>
-            <p>Illustrative site layout · sample locations and operating status</p>
+            <p>Illustrative mine locations and operating status · sample coordinates</p>
           </div>
           <label className="mine-map-filter">
             <span>Show</span>
@@ -392,69 +473,29 @@ function Dashboard() {
         </div>
 
         <div className="dashboard-map-layout">
-          <div className={`mine-map-viewport ${showTerrain ? "" : "terrain-hidden"}`}>
-            <div
-              className="mine-map-scene"
-              style={{ transform: `scale(${mapZoom})` }}
-              aria-label="Schematic map showing sample mine locations in eastern India"
-            >
-              <svg className="mine-map-art" viewBox="0 0 800 440" preserveAspectRatio="none" aria-hidden="true">
-                <defs>
-                  <pattern id="mine-map-grid" width="56" height="56" patternUnits="userSpaceOnUse">
-                    <path d="M 56 0 L 0 0 0 56" fill="none" stroke="#91aaa0" strokeOpacity=".2" strokeWidth="1" />
-                  </pattern>
-                  <linearGradient id="mine-map-wash" x1="0" x2="1" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#dcebe1" />
-                    <stop offset="100%" stopColor="#c6ddd1" />
-                  </linearGradient>
-                </defs>
-                <rect width="800" height="440" fill="url(#mine-map-wash)" />
-                <rect width="800" height="440" fill="url(#mine-map-grid)" />
-                <g className="mine-map-contours" fill="none" stroke="#729b88" strokeOpacity=".3" strokeWidth="1.3">
-                  <path d="M-30 98 C96 20 154 175 277 105 S456 32 550 105 706 182 835 84" />
-                  <path d="M-28 122 C90 48 164 201 285 132 S452 64 545 132 719 207 832 109" />
-                  <path d="M-20 312 C90 233 184 362 291 296 S455 229 560 303 704 369 827 270" />
-                  <path d="M-20 338 C99 257 185 389 304 322 S460 252 563 328 709 397 830 296" />
-                  <path d="M115 -25 C166 50 89 111 150 182 S220 306 162 464" />
-                  <path d="M134 -26 C188 53 110 116 171 187 S242 311 182 463" />
-                  <path d="M615 -22 C556 49 645 122 581 196 S540 324 615 462" />
-                </g>
-                <g fill="none" stroke="#faf7e9" strokeWidth="8" strokeLinecap="round" opacity=".8">
-                  <path d="M55 386 C160 328 223 280 333 250 S514 199 748 54" />
-                  <path d="M122 28 C216 106 292 147 405 206 S597 303 751 400" />
-                </g>
-                <g fill="none" stroke="#cda96c" strokeWidth="2" strokeDasharray="5 7" opacity=".8">
-                  <path d="M55 386 C160 328 223 280 333 250 S514 199 748 54" />
-                  <path d="M122 28 C216 106 292 147 405 206 S597 303 751 400" />
-                </g>
-                <path d="M-15 225 C113 186 205 247 322 214 S520 180 620 224 735 250 821 214" fill="none" stroke="#74aeca" strokeWidth="4" strokeLinecap="round" opacity=".68" />
-                <g className="mine-map-regions" fill="#4a6b60" fontSize="12" fontFamily="Inter, sans-serif" fontWeight="700" letterSpacing="2">
-                  <text x="96" y="115">JHARKHAND</text>
-                  <text x="583" y="351">ODISHA</text>
-                  <text x="168" y="378">CHHATTISGARH</text>
-                </g>
-                <g className="mine-map-compass" fill="#4b6a5e">
-                  <path d="M750 28 L758 48 L750 44 L742 48 Z" />
-                  <text x="747" y="21" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="700">N</text>
-                </g>
-              </svg>
-              <div className="mine-map-markers" aria-label="Mine site markers">
-                {filteredMineSites.map((mine) => (
-                  <button
-                    type="button"
-                    key={mine.id}
-                    className={`mine-map-marker ${selectedMine?.id === mine.id ? "selected" : ""}`}
-                    style={{ left: `${mine.x}%`, top: `${mine.y}%`, "--mine-status-color": mineStatusColors[mine.status] }}
-                    aria-label={`${mine.name}, ${mine.status}${mine.production ? `, ${mine.production} thousand tonnes this month` : ""}`}
-                    aria-pressed={selectedMine?.id === mine.id}
-                    onClick={() => setSelectedMineId(mine.id)}
-                  >
-                    <span className="mine-map-marker-dot" />
-                    {showMineLabels && <span className="mine-map-marker-label">{mine.name}</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className={`mine-map-viewport ${showGoogleMap && !showTerrain ? "terrain-hidden" : ""}`}>
+            {showGoogleMap ? (
+              <GoogleMineMap
+                sites={filteredMineSites}
+                selectedSiteId={selectedMine?.id}
+                onSelect={setSelectedMineId}
+                zoom={mapZoom}
+                showTerrain={showTerrain}
+                showLabels={showMineLabels}
+                statusColors={mineStatusColors}
+                onError={setGoogleMapsUnavailable}
+              />
+            ) : (
+              <OpenStreetMapMineMap
+                key={mineStatusFilter}
+                sites={filteredMineSites}
+                selectedSiteId={selectedMine?.id}
+                onSelect={setSelectedMineId}
+                zoom={mapZoom}
+                showLabels={showMineLabels}
+                statusColors={mineStatusColors}
+              />
+            )}
             <div className="mine-map-controls" aria-label="Map controls">
               <button
                 type="button"
@@ -482,17 +523,21 @@ function Dashboard() {
               >
                 <RotateCcw size={15} />
               </button>
-              <span className="mine-map-control-divider" />
-              <button
-                type="button"
-                className={showTerrain ? "active" : ""}
-                aria-label={`${showTerrain ? "Hide" : "Show"} terrain layer`}
-                aria-pressed={showTerrain}
-                title="Toggle terrain layer"
-                onClick={() => setShowTerrain((visible) => !visible)}
-              >
-                <Factory size={15} />
-              </button>
+              {showGoogleMap && (
+                <>
+                  <span className="mine-map-control-divider" />
+                  <button
+                    type="button"
+                    className={showTerrain ? "active" : ""}
+                    aria-label={`${showTerrain ? "Hide" : "Show"} terrain layer`}
+                    aria-pressed={showTerrain}
+                    title="Toggle terrain layer"
+                    onClick={() => setShowTerrain((visible) => !visible)}
+                  >
+                    <Factory size={15} />
+                  </button>
+                </>
+              )}
               <button
                 type="button"
                 className={showMineLabels ? "active" : ""}
@@ -504,7 +549,11 @@ function Dashboard() {
                 <MapPinned size={15} />
               </button>
             </div>
-            <span className="mine-map-scale">Schematic view · not to scale</span>
+            <span className="mine-map-scale">
+              {showGoogleMap
+                ? "Google Maps · sample site coordinates"
+                : "OpenStreetMap · sample site coordinates"}
+            </span>
           </div>
 
           <aside className="mine-map-details" aria-live="polite">
@@ -549,13 +598,13 @@ function Dashboard() {
       </section>
 
       <section className="dashboard-chart-grid">
-        <article className="dashboard-panel">
+        <article id="dashboard-production-chart" className="dashboard-panel">
           <div className="panel-heading">
             <div>
               <h2>
                 <TrendingUp size={16} /> Monthly Production
               </h2>
-              <p>Actual output compared with target · million tonnes</p>
+              <p>Click a month to inspect actual output and target · million tonnes</p>
             </div>
 
             <select
@@ -570,7 +619,9 @@ function Dashboard() {
           </div>
 
           <button
+            type="button"
             className="chart-toggle"
+            aria-pressed={showTarget}
             onClick={() => setShowTarget((current) => !current)}
           >
             {showTarget ? "Hide target line" : "Show target line"}
@@ -581,6 +632,13 @@ function Dashboard() {
               <LineChart
                 data={visibleProduction}
                 margin={{ top: 10, right: 8, left: -16, bottom: 0 }}
+                onClick={(chartState) => {
+                  if (chartState?.activeLabel) {
+                    setSelectedProductionMonth((current) => (
+                      current === chartState.activeLabel ? null : chartState.activeLabel
+                    ));
+                  }
+                }}
               >
                 <CartesianGrid stroke="#e7edf4" strokeDasharray="3 3" />
                 <XAxis dataKey="month" tickLine={false} />
@@ -594,7 +652,7 @@ function Dashboard() {
                   stroke="#146c6c"
                   strokeWidth={3}
                   dot={{ r: 4 }}
-                  activeDot={{ r: 7 }}
+                  activeDot={{ r: 7, cursor: "pointer" }}
                 />
                 {showTarget && (
                   <Line
@@ -605,12 +663,19 @@ function Dashboard() {
                     strokeWidth={2}
                     strokeDasharray="5 4"
                     dot={{ r: 3 }}
-                    activeDot={{ r: 6 }}
+                    activeDot={{ r: 6, cursor: "pointer" }}
                   />
                 )}
               </LineChart>
             </ResponsiveContainer>
           </div>
+          {selectedProduction && (
+            <p className="dashboard-chart-selection" role="status">
+              <strong>{selectedProduction.month} production:</strong> {selectedProduction.actual} Mt actual
+              {showTarget && ` · ${selectedProduction.target} Mt target`}
+              <button type="button" onClick={() => setSelectedProductionMonth(null)}>Clear</button>
+            </p>
+          )}
         </article>
 
         <article className="dashboard-panel">
@@ -619,12 +684,14 @@ function Dashboard() {
               <h2>
                 <Leaf size={16} /> Environmental Trends
               </h2>
-              <p>Illustrative environmental monitoring indices</p>
+              <p>Click a month to inspect environmental indices</p>
             </div>
           </div>
 
           <button
+            type="button"
             className="chart-toggle"
+            aria-pressed={showWater}
             onClick={() => setShowWater((current) => !current)}
           >
             {showWater ? "Hide water series" : "Show water series"}
@@ -635,6 +702,13 @@ function Dashboard() {
               <LineChart
                 data={visibleEnvironment}
                 margin={{ top: 10, right: 8, left: -16, bottom: 0 }}
+                onClick={(chartState) => {
+                  if (chartState?.activeLabel) {
+                    setSelectedEnvironmentMonth((current) => (
+                      current === chartState.activeLabel ? null : chartState.activeLabel
+                    ));
+                  }
+                }}
               >
                 <CartesianGrid stroke="#e7edf4" strokeDasharray="3 3" />
                 <XAxis dataKey="month" tickLine={false} />
@@ -651,7 +725,7 @@ function Dashboard() {
                   stroke="#146c6c"
                   strokeWidth={3}
                   dot={{ r: 3 }}
-                  activeDot={{ r: 6 }}
+                  activeDot={{ r: 6, cursor: "pointer" }}
                 />
                 {showWater && (
                   <Line
@@ -661,12 +735,19 @@ function Dashboard() {
                     stroke="#8bbdb3"
                     strokeWidth={3}
                     dot={{ r: 3 }}
-                    activeDot={{ r: 6 }}
+                    activeDot={{ r: 6, cursor: "pointer" }}
                   />
                 )}
               </LineChart>
             </ResponsiveContainer>
           </div>
+          {selectedEnvironment && (
+            <p className="dashboard-chart-selection" role="status">
+              <strong>{selectedEnvironment.month} indices:</strong> Air {selectedEnvironment.air}/100
+              {showWater && ` · Water ${selectedEnvironment.water}/100`}
+              <button type="button" onClick={() => setSelectedEnvironmentMonth(null)}>Clear</button>
+            </p>
+          )}
         </article>
       </section>
 
@@ -731,6 +812,8 @@ function Dashboard() {
                   className={`dashboard-legend-row ${
                     selectedActivity === activity.name ? "chosen" : ""
                   }`}
+                  type="button"
+                  aria-pressed={selectedActivity === activity.name}
                   onClick={() =>
                     setSelectedActivity((current) =>
                       current === activity.name ? null : activity.name
@@ -761,7 +844,7 @@ function Dashboard() {
               <h2>
                 <FileText size={16} /> Monthly Report Activity
               </h2>
-              <p>Reports generated by category</p>
+              <p>Click a month for totals; toggle categories below</p>
             </div>
 
             <select
@@ -780,43 +863,77 @@ function Dashboard() {
               <BarChart
                 data={visibleReports}
                 margin={{ top: 10, right: 4, left: -18, bottom: 0 }}
+                onClick={(chartState) => {
+                  if (chartState?.activeLabel) {
+                    setSelectedReportMonth((current) => (
+                      current === chartState.activeLabel ? null : chartState.activeLabel
+                    ));
+                  }
+                }}
               >
                 <CartesianGrid stroke="#e7edf4" strokeDasharray="3 3" />
                 <XAxis dataKey="month" tickLine={false} />
                 <YAxis tickLine={false} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend />
-                <Bar
-                  dataKey="geological"
-                  name="Geological"
-                  fill="#146c6c"
-                  radius={[3, 3, 0, 0]}
-                />
-                <Bar
-                  dataKey="mining"
-                  name="Mining"
-                  fill="#168a78"
-                  radius={[3, 3, 0, 0]}
-                />
-                <Bar
-                  dataKey="environment"
-                  name="Environment"
-                  fill="#4f9d98"
-                  radius={[3, 3, 0, 0]}
-                />
-                <Bar
-                  dataKey="safety"
-                  name="Safety"
-                  fill="#8bbdb3"
-                  radius={[3, 3, 0, 0]}
-                />
+                {visibleReportSeries.geological && (
+                  <Bar dataKey="geological" name="Geological" fill="#146c6c" radius={[3, 3, 0, 0]} />
+                )}
+                {visibleReportSeries.mining && (
+                  <Bar dataKey="mining" name="Mining" fill="#168a78" radius={[3, 3, 0, 0]} />
+                )}
+                {visibleReportSeries.environment && (
+                  <Bar dataKey="environment" name="Environment" fill="#4f9d98" radius={[3, 3, 0, 0]} />
+                )}
+                {visibleReportSeries.safety && (
+                  <Bar dataKey="safety" name="Safety" fill="#8bbdb3" radius={[3, 3, 0, 0]} />
+                )}
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <div className="dashboard-series-controls" role="group" aria-label="Toggle report chart categories">
+            {[
+              ["geological", "Geological", "#146c6c"],
+              ["mining", "Mining", "#168a78"],
+              ["environment", "Environment", "#4f9d98"],
+              ["safety", "Safety", "#8bbdb3"],
+            ].map(([series, label, color]) => (
+              <button
+                key={series}
+                type="button"
+                aria-pressed={visibleReportSeries[series]}
+                className={visibleReportSeries[series] ? "active" : ""}
+                onClick={() => setVisibleReportSeries((current) => ({
+                  ...current,
+                  [series]: !current[series],
+                }))}
+              >
+                <span style={{ backgroundColor: color }} />
+                {label}
+              </button>
+            ))}
+          </div>
+          {selectedReportActivity && (
+            <div className="dashboard-chart-selection" role="status">
+              <strong>{selectedReportActivity.month} report activity:</strong>
+              <span>
+                {Object.entries({
+                  geological: "Geological",
+                  mining: "Mining",
+                  environment: "Environment",
+                  safety: "Safety",
+                })
+                  .filter(([series]) => visibleReportSeries[series])
+                  .map(([series, label]) => `${label} ${selectedReportActivity[series]}`)
+                  .join(" · ") || "No categories selected"}
+              </span>
+              <button type="button" onClick={() => setSelectedReportMonth(null)}>Clear</button>
+            </div>
+          )}
         </article>
       </section>
 
-      <section className="dashboard-panel dashboard-reports">
+      <section id="dashboard-recent-reports" className="dashboard-panel dashboard-reports">
         <div className="panel-heading">
           <div>
             <h2>
@@ -824,7 +941,7 @@ function Dashboard() {
             </h2>
             <p>Select a report row to view its summary.</p>
           </div>
-          <button className="chart-toggle" onClick={exportReports}>
+          <button type="button" className="chart-toggle" onClick={exportReports}>
             <Download size={14} /> Export CSV
           </button>
         </div>
@@ -846,12 +963,17 @@ function Dashboard() {
                 <tr
                   key={report.id}
                   className={selectedReport === report.id ? "report-selected" : ""}
-                  onClick={() =>
-                    setSelectedReport((current) =>
-                      current === report.id ? null : report.id
-                    )
-                  }
-                  style={{ cursor: "pointer" }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${report.name}, ${report.project}, ${report.status}. Activate to view summary.`}
+                  aria-pressed={selectedReport === report.id}
+                  onClick={() => selectReportRow(report.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      selectReportRow(report.id);
+                    }
+                  }}
                 >
                   <td>{report.id}</td>
                   <td>{report.name}</td>

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
   Tooltip, XAxis, YAxis
@@ -9,6 +10,8 @@ import {
 } from 'lucide-react';
 
 function Analysis() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const actionParam = searchParams.get('action');
   const [storedAnalysisData] = useState(() => {
     const result = { reports: null, chartOverrides: {}, errors: [] };
     try {
@@ -55,6 +58,17 @@ function Analysis() {
   const [editingChartData, setEditingChartData] = useState(false);
   const [chartDataDraft, setChartDataDraft] = useState({ coal: '', overburden: '', others: '' });
   const [monthlyBarOverrides, setMonthlyBarOverrides] = useState(storedAnalysisData.chartOverrides);
+
+  useEffect(() => {
+    if (actionParam !== 'generate') return;
+    const timer = window.setTimeout(() => {
+      setIsGenerateOpen(true);
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('action');
+      setSearchParams(nextParams, { replace: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [actionParam, searchParams, setSearchParams]);
 
   // New Analysis Form State
   const [analysisName, setAnalysisName] = useState('');

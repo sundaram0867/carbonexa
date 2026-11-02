@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Bot, Send, Paperclip, Database, Globe, Plus, 
@@ -31,7 +31,7 @@ function getAssistantResponse(prompt) {
   ));
 
   if (destination) {
-    return { text: `Open ${destination.label} to continue.`, destination };
+    return { handled: true, text: `Open ${destination.label} to continue.`, destination };
   }
 
   if (/\b(file|files|document|documents|folder|folders|find|search|locate|where)\b/.test(normalizedPrompt)) {
@@ -47,6 +47,7 @@ function getAssistantResponse(prompt) {
     const matches = matchingFiles.slice(0, 6);
 
     return {
+      handled: true,
       text: `${error ? `${error} ` : ''}${matchingFiles.length
         ? `Found ${matchingFiles.length} matching ${matchingFiles.length === 1 ? 'file' : 'files'} in your saved library${matchingFiles.length > matches.length ? `; showing the first ${matches.length}` : ''}:`
         : 'No files matched that search in the saved library. Try a file name, category, or folder such as “safety”, “water”, or “geological”.'}`,
@@ -58,7 +59,7 @@ function getAssistantResponse(prompt) {
   }
 
   return {
-    text: 'I can search your saved document library and take you to app sections. Try “Find safety files”, “Search water analysis”, or “Open Documents”. Operational analysis and document summarization need a connected AI service.',
+    handled: false,
   };
 }
 
@@ -67,11 +68,30 @@ function AIAssistant() {
     {
       id: 1,
       sender: 'ai',
-      text: "Hello! I'm Carbonexa's file assistant.\n\nI can search the saved document library by file name, type, category, or folder and take you to other app sections. Try “Find safety files” or “Open Documents”.",
-      time: '10:24 AM'
+      text: "Hello! I'm Carbonexa's mining and field-work assistant.\n\nI can search saved documents and navigate the workspace. Ask me about mining operations, geology, environmental monitoring, or reports when Gemini is connected.",
+      time: '10:24 AM',
+      localOnly: true,
     }
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [geminiConfigured, setGeminiConfigured] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/health')
+      .then((response) => response.ok ? response.json() : null)
+      .then((status) => {
+        if (active) setGeminiConfigured(Boolean(status?.geminiConfigured));
+      })
+      .catch(() => {
+        if (active) setGeminiConfigured(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [recentChats] = useState([
     { id: 1, title: 'Coal Production Analysis', desc: 'Compare production data of last 6...', date: '30 Sep 2026' },
@@ -81,28 +101,88 @@ function AIAssistant() {
     { id: 5, title: 'Report Draft - Bokaro Project', desc: 'Create a detailed production report', date: '24 Sep 2026' },
   ]);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isSending) return;
     const prompt = inputValue.trim();
+    const localResponse = getAssistantResponse(prompt);
 
     const userMsg = {
       id: Date.now(),
       sender: 'user',
       text: prompt,
-      time: 'Just now'
+      time: 'Just now',
+      localOnly: localResponse.handled,
     };
 
-    const assistantResponse = getAssistantResponse(prompt);
-    const aiReply = {
-      id: Date.now() + 1,
-      sender: 'ai',
-      ...assistantResponse,
-      time: 'Just now'
-    };
-
-    setMessages((currentMessages) => [...currentMessages, userMsg, aiReply]);
+    setMessages((currentMessages) => [...currentMessages, userMsg]);
     setInputValue('');
+
+    if (localResponse.handled) {
+      const assistantResponse = { ...localResponse };
+      delete assistantResponse.handled;
+      setMessages((currentMessages) => [...currentMessages, {
+        id: Date.now() + 1,
+        sender: 'ai',
+        ...assistantResponse,
+        time: 'Just now',
+      }]);
+      return;
+    }
+
+    const history = messages
+      .filter((message) => (
+        !message.localOnly
+        && !message.files
+        && !message.destination
+        && (message.sender === 'user' || message.sender === 'ai')
+      ))
+      .slice(-12)
+      .map((message) => ({
+        role: message.sender === 'user' ? 'user' : 'model',
+        text: message.text,
+      }));
+
+    setIsSending(true);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, history }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        const serverMessage = typeof result?.error === 'string' ? result.error : '';
+        if (response.status === 502) {
+          throw new Error(`The AI service gateway returned HTTP 502.${serverMessage ? ` ${serverMessage}` : ''} Check that Carbonexa is running on the URL printed by Vite and review its server logs.`);
+        }
+        if (response.status >= 500 && !serverMessage) {
+          throw new Error('The Carbonexa backend is unavailable. Check that the frontend and API are running from this project.');
+        }
+        throw new Error(serverMessage || 'Gemini could not answer just now. Please try again.');
+      }
+      if (typeof result?.text !== 'string' || !result.text.trim()) {
+        throw new Error('The AI service returned an invalid response. Please try again.');
+      }
+
+      setMessages((currentMessages) => [...currentMessages, {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: result.text.trim(),
+        time: 'Just now',
+      }]);
+    } catch (error) {
+      setMessages((currentMessages) => [...currentMessages, {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: error instanceof TypeError
+          ? 'The Carbonexa backend is unavailable. Check that the frontend and API are running, then try again.'
+          : error.message || 'Gemini could not answer just now. Please try again.',
+        time: 'Just now',
+      }]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleQuickPrompt = (promptText) => {
@@ -115,7 +195,8 @@ function AIAssistant() {
         id: Date.now(),
         sender: 'ai',
         text: "New chat started! How can I assist you with your mining and environmental data today?",
-        time: 'Just now'
+        time: 'Just now',
+        localOnly: true,
       }
     ]);
   };
@@ -136,7 +217,7 @@ function AIAssistant() {
               <span style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>Beta</span>
             </div>
             <p style={{ fontSize: '13px', margin: 0, opacity: 0.9, maxWidth: '600px' }}>
-              Find saved files by name, category, or folder and navigate the workspace with simple requests.
+              Search saved documents, navigate the workspace, and ask mining and field-work questions.
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -214,14 +295,16 @@ function AIAssistant() {
               </div>
               <div>
                 <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>Chat with CARBONEXA AI</div>
-                <div style={{ fontSize: '11px', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ width: '6px', height: '6px', background: '#16a34a', borderRadius: '50%' }}></span> Powered by advanced AI for mining and geological analysis
+                <div style={{ fontSize: '11px', color: geminiConfigured ? '#16a34a' : '#b7791f', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ width: '6px', height: '6px', background: geminiConfigured ? '#16a34a' : '#d69e2e', borderRadius: '50%' }}></span>
+                  {geminiConfigured ? 'Google Gemini key configured · mining and field-work assistance' : 'Add a Gemini API key for AI-generated answers'}
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button 
+              <button
+                disabled={isSending}
                 onClick={handleNewChat}
                 style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
               >
@@ -234,7 +317,7 @@ function AIAssistant() {
           </div>
 
           {/* Messages Container */}
-          <div className="assistant-message-list" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', background: '#fafbfc' }}>
+          <div className="assistant-message-list" aria-live="polite" aria-busy={isSending} style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', background: '#fafbfc' }}>
             {messages.map((msg) => (
               <div 
                 key={msg.id} 
@@ -250,7 +333,6 @@ function AIAssistant() {
                   borderRadius: msg.sender === 'user' ? '12px 12px 0 12px' : '12px 12px 12px 0', 
                   background: msg.sender === 'user' ? '#0284c7' : '#fff', 
                   color: msg.sender === 'user' ? '#fff' : '#0f172a',
-                  border: msg.sender === 'ai' ? '1px solid #e2e8f0' : 'none',
                   fontSize: '13px',
                   whiteSpace: 'pre-line',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
@@ -275,6 +357,11 @@ function AIAssistant() {
                 <span style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>{msg.time}</span>
               </div>
             ))}
+            {isSending && (
+              <div role="status" style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px 12px 12px 0', color: '#64748b', background: '#fff', fontSize: '12px' }}>
+                Gemini is preparing a response…
+              </div>
+            )}
           </div>
 
           {/* Suggestion Chips */}
@@ -295,12 +382,12 @@ function AIAssistant() {
             <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 12px', gap: '10px' }}>
               <input 
                 type="text" 
-                placeholder="Try “Find safety files” or “Open Documents”..."
+                placeholder="Ask about mining, geology, reports, or find a saved file..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', width: '100%', color: '#0f172a' }}
               />
-              <button type="submit" style={{ background: '#0284c7', border: 'none', width: '32px', height: '32px', borderRadius: '6px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+              <button type="submit" disabled={isSending} aria-label="Send message" style={{ background: '#0284c7', border: 'none', width: '32px', height: '32px', borderRadius: '6px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isSending ? 'wait' : 'pointer', opacity: isSending ? 0.65 : 1, flexShrink: 0 }}>
                 <Send size={15} />
               </button>
             </div>

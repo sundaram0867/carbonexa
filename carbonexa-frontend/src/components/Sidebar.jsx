@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
+  BriefcaseBusiness,
   FileText, 
   BarChart2, 
   Activity, 
@@ -31,6 +32,10 @@ function Sidebar({ collapsed, onNavigate }) {
         <NavLink to="/" className={navClass} title={collapsed ? 'Dashboard' : undefined} onClick={onNavigate}>
           <LayoutDashboard size={18} />
           <span>Dashboard</span>
+        </NavLink>
+        <NavLink to="/projects" className={navClass} title={collapsed ? 'Projects' : undefined} onClick={onNavigate}>
+          <BriefcaseBusiness size={18} />
+          <span>Projects</span>
         </NavLink>
         <NavLink to="/documents" className={navClass} title={collapsed ? 'Documents' : undefined} onClick={onNavigate}>
           <FileText size={18} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const SETTINGS_STORAGE_KEY = 'carbonexa-settings';
 const settingsTabs = ['Profile', 'Account', 'Notifications', 'Appearance', 'Project Settings', 'AI Assistant', 'Storage & Data', 'Team & Access', 'Integrations', 'System'];
@@ -49,8 +50,6 @@ function Settings({ theme, onThemeChange }) {
   const [pushAlerts, setPushAlerts] = useState(() => getSavedSetting('pushAlerts', true));
   const [weeklyDigest, setWeeklyDigest] = useState(() => getSavedSetting('weeklyDigest', false));
   const [sessionTimeout, setSessionTimeout] = useState(() => getSavedSetting('sessionTimeout', '30 minutes'));
-  const [defaultProject, setDefaultProject] = useState(() => getSavedSetting('defaultProject', 'Jharia Block'));
-  const [productionTarget, setProductionTarget] = useState(() => getSavedSetting('productionTarget', '6200'));
   const [waterQualityLimit, setWaterQualityLimit] = useState(() => getSavedSetting('waterQualityLimit', '120'));
   const [autoSummaries, setAutoSummaries] = useState(() => getSavedSetting('autoSummaries', true));
   const [includeArchivedData, setIncludeArchivedData] = useState(() => getSavedSetting('includeArchivedData', false));
@@ -68,8 +67,6 @@ function Settings({ theme, onThemeChange }) {
       pushAlerts,
       weeklyDigest,
       sessionTimeout,
-      defaultProject,
-      productionTarget,
       waterQualityLimit,
       aiModel,
       autoSummaries,
@@ -308,26 +305,15 @@ function Settings({ theme, onThemeChange }) {
           {/* TAB 5: PROJECT SETTINGS */}
           {activeTab === 'Project Settings' && (
             <div style={{ background: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(10px)', borderRadius: '8px', border: '1px solid rgba(226, 232, 240, 0.8)', padding: '24px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>Active Mining Project Parameters</h3>
-              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>Configure default benchmark thresholds for coal and mineral extraction units.</p>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Project profiles and benchmarks</h3>
+              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>Add project identity, site details, operating status, and production targets in the Projects workspace. Dashboard charts are illustrative sample data and are not linked to these profiles.</p>
+              <Link to="/projects" className="settings-projects-link">Manage project profiles <span aria-hidden="true">→</span></Link>
+              <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: '22px 0 6px' }}>Default environmental benchmark</h4>
+              <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '14px' }}>This browser-only preference is not connected to a live monitoring system.</p>
               <div className="settings-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#334155', display: 'block', marginBottom: '6px' }}>Default Production Target (Tonnes)</label>
-                  <input type="number" min="0" value={productionTarget} onChange={(event) => setProductionTarget(event.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'rgba(255,255,255,0.9)' }} />
-                </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '600', color: '#334155', display: 'block', marginBottom: '6px' }}>Water Quality PPM Limit</label>
                   <input type="number" min="0" value={waterQualityLimit} onChange={(event) => setWaterQualityLimit(event.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'rgba(255,255,255,0.9)' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#334155', display: 'block', marginBottom: '6px' }}>Default project</label>
-                  <select value={defaultProject} onChange={(event) => setDefaultProject(event.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'rgba(255,255,255,0.9)' }}>
-                    <option>Jharia Block</option>
-                    <option>Bokaro Project</option>
-                    <option>North Karanpura</option>
-                    <option>Talcher Coalfield</option>
-                    <option>Ib Valley</option>
-                  </select>
                 </div>
               </div>
               <button onClick={() => handleSave('Project parameters')} style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', marginTop: '20px' }}>

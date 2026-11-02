@@ -2,9 +2,9 @@ export const notificationsStorageKey = 'carbonexa-notifications';
 export const notificationsUpdatedEvent = 'carbonexa-notifications-updated';
 
 export const defaultNotifications = [
-  { id: 1, type: 'alert', title: 'High Dust Emission Alert', desc: 'Active mine sector 4 reported elevated particulate levels.', time: '10 mins ago', read: false },
-  { id: 2, type: 'success', title: 'Monthly Report Generated', desc: 'The mining analytics report was successfully compiled.', time: '1 hour ago', read: false },
-  { id: 3, type: 'info', title: 'System Update Completed', desc: 'Carbonexa workspace data was synchronized.', time: '5 hours ago', read: false },
+  { id: 1, type: 'alert', category: 'Environmental', title: 'High Dust Emission Alert', desc: 'Active mine sector 4 reported elevated particulate levels.', time: '10 mins ago', read: false },
+  { id: 2, type: 'success', category: 'Reports', title: 'Monthly Report Generated', desc: 'The mining analytics report was successfully compiled.', time: '1 hour ago', read: false },
+  { id: 3, type: 'info', category: 'System', title: 'System Update Completed', desc: 'Carbonexa workspace data was synchronized.', time: '5 hours ago', read: false },
 ];
 
 export function loadNotifications() {
@@ -21,6 +21,7 @@ export function loadNotifications() {
         && typeof notification.desc === 'string'
         && typeof notification.time === 'string'
         && typeof notification.read === 'boolean'
+        && (notification.category === undefined || typeof notification.category === 'string')
       ));
 
     if (!validNotifications) throw new Error('Saved notification data is invalid.');

@@ -8,9 +8,16 @@ function Notifications() {
   const [filter, setFilter] = useState('all');
   const [storageError, setStorageError] = useState(initialState.error);
   const unreadCount = notifications.filter((notification) => !notification.read).length;
+  const categoryFor = (notification) => notification.category || ({
+    alert: 'Environmental',
+    success: 'Reports',
+    info: 'System',
+  }[notification.type]);
+  const categories = [...new Set(notifications.map(categoryFor))].sort();
   const visibleNotifications = notifications.filter((notification) => {
     if (filter === 'unread') return !notification.read;
     if (filter === 'alerts') return notification.type === 'alert';
+    if (filter.startsWith('category:')) return categoryFor(notification) === filter.slice('category:'.length);
     return true;
   });
 
@@ -73,6 +80,10 @@ function Notifications() {
             { id: 'all', label: `All (${notifications.length})` },
             { id: 'unread', label: `Unread (${unreadCount})` },
             { id: 'alerts', label: `Alerts (${notifications.filter((notification) => notification.type === 'alert').length})` },
+            ...categories.map((category) => ({
+              id: `category:${category}`,
+              label: `${category} (${notifications.filter((notification) => categoryFor(notification) === category).length})`,
+            })),
           ].map((option) => (
             <button
               type="button"
