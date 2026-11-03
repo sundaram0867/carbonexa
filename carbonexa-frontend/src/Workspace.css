@@ -2957,6 +2957,830 @@
   background-repeat: no-repeat !important;
 }
 
+/* Phase 4 Analysis workspace additions */
+.analysis-kpi-card {
+  cursor: pointer;
+}
+
+.analysis-kpi-card:focus-visible {
+  outline: 3px solid rgba(22, 138, 120, 0.3);
+  outline-offset: 2px;
+}
+
+.analysis-mine-table-row {
+  display: grid;
+  grid-template-columns: minmax(145px, 1.8fr) minmax(90px, 1fr) minmax(58px, 0.7fr) minmax(60px, 0.75fr) minmax(100px, 1fr) minmax(92px, 0.9fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 760px;
+  padding: 11px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--workspace-ink);
+  font-size: 11px;
+}
+
+.analysis-mine-table-heading {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  color: var(--workspace-muted);
+  background: #f8fafc;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.analysis-mine-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.analysis-mine-name-cell button {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  color: var(--workspace-ink);
+  background: none;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.analysis-mine-name-cell button:hover {
+  color: var(--workspace-accent-strong);
+  text-decoration: underline;
+}
+
+.analysis-report-filters {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.5fr) repeat(4, minmax(120px, 1fr));
+  gap: 7px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--workspace-border);
+  background: #fbfdfe;
+}
+
+.analysis-report-filters input,
+.analysis-report-filters select {
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 7px;
+  color: var(--workspace-ink);
+  background: var(--workspace-surface);
+  font: inherit;
+  font-size: 10px;
+}
+
+.analysis-quiet-action,
+.analysis-export-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid #cbded9;
+  border-radius: 7px;
+  color: var(--workspace-accent-strong);
+  background: #f8fcfb;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.analysis-quiet-action:hover,
+.analysis-export-actions button:hover {
+  border-color: var(--workspace-accent);
+  background: var(--workspace-accent-soft);
+}
+
+.analysis-report-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 18px;
+  color: var(--workspace-muted);
+  font-size: 10px;
+}
+
+.analysis-report-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.analysis-report-pagination button {
+  padding: 5px 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  color: var(--workspace-ink);
+  background: var(--workspace-surface);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.analysis-report-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.analysis-intelligence {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 22px 0 10px;
+  padding: 20px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 13px;
+  background: var(--workspace-surface);
+  box-shadow: 0 5px 16px rgba(23, 50, 75, 0.065);
+}
+
+.analysis-intel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.analysis-intel-heading h3 {
+  margin: 0;
+  color: var(--workspace-ink);
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.analysis-intel-heading p {
+  margin: 5px 0 0;
+  color: var(--workspace-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.analysis-demo-tag {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid #ead6a8;
+  border-radius: 20px;
+  color: #805d12;
+  background: #fff8e7;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.analysis-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid #e4edf0;
+  border-radius: 9px;
+  background: #f8fbfc;
+}
+
+.analysis-control {
+  display: flex;
+  min-width: 140px;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--workspace-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.analysis-control input,
+.analysis-control select {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 7px;
+  color: var(--workspace-ink);
+  background: var(--workspace-surface);
+  font: inherit;
+  font-size: 11px;
+}
+
+.analysis-filter-summary {
+  margin: 0 auto 8px 2px;
+  color: var(--workspace-muted);
+  font-size: 10px;
+}
+
+.analysis-mine-picker,
+.analysis-builder-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 15px;
+  margin: 0;
+  padding: 9px 11px 10px;
+  border: 1px solid #e4edf0;
+  border-radius: 9px;
+}
+
+.analysis-mine-picker legend,
+.analysis-builder-metrics legend {
+  padding: 0 5px;
+  color: var(--workspace-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.analysis-mine-picker label,
+.analysis-builder-metrics label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--workspace-ink);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.analysis-mine-picker input,
+.analysis-builder-metrics input {
+  accent-color: var(--workspace-accent);
+}
+
+.analysis-intel-tabs {
+  display: flex;
+  gap: 5px;
+  padding-bottom: 7px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--workspace-border);
+}
+
+.analysis-intel-tabs button {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--workspace-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.analysis-intel-tabs button:hover,
+.analysis-intel-tabs button.is-active {
+  border-color: #d1e6df;
+  color: var(--workspace-accent-strong);
+  background: var(--workspace-accent-soft);
+}
+
+.analysis-intel-panel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.analysis-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 9px;
+}
+
+.analysis-controls-grid .analysis-control {
+  min-width: 0;
+}
+
+.analysis-intel-chart {
+  width: 100%;
+  height: 270px;
+  min-width: 0;
+  padding: 8px 4px 0;
+  border: 1px solid #edf2f4;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.analysis-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid #e3ecef;
+  border-radius: 9px;
+  background: #f8fbfc;
+}
+
+.analysis-summary-strip span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 13px;
+  border-right: 1px solid #e3ecef;
+}
+
+.analysis-summary-strip span:last-child {
+  border-right: 0;
+}
+
+.analysis-summary-strip small,
+.analysis-geology-detail small {
+  color: var(--workspace-muted);
+  font-size: 9px;
+}
+
+.analysis-summary-strip strong,
+.analysis-geology-detail strong {
+  color: var(--workspace-ink);
+  font-size: 12px;
+}
+
+.analysis-data-table-wrap {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #e3ecef;
+  border-radius: 8px;
+}
+
+.analysis-data-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  color: var(--workspace-ink);
+  font-size: 10px;
+  text-align: left;
+}
+
+.analysis-data-table th {
+  position: sticky;
+  top: 0;
+  padding: 9px 10px;
+  color: var(--workspace-muted);
+  background: #f6fafb;
+  font-size: 9px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.analysis-data-table td {
+  padding: 9px 10px;
+  border-top: 1px solid #edf2f4;
+  white-space: nowrap;
+}
+
+.analysis-data-table tbody tr {
+  cursor: pointer;
+}
+
+.analysis-data-table tbody tr:hover {
+  background: #f5faf8;
+}
+
+.analysis-data-table .is-positive {
+  color: #168255;
+  font-weight: 700;
+}
+
+.analysis-data-table .is-negative {
+  color: #c2413b;
+  font-weight: 700;
+}
+
+.analysis-detail-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #cfe4dc;
+  border-radius: 8px;
+  color: var(--workspace-ink);
+  background: #f0f8f5;
+  font-size: 10px;
+}
+
+.analysis-detail-strip > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-right: auto;
+}
+
+.analysis-detail-strip span {
+  color: var(--workspace-muted);
+}
+
+.analysis-detail-strip button {
+  border: 0;
+  color: var(--workspace-muted);
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.analysis-geology-detail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.analysis-geology-detail > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 11px;
+  border: 1px solid #e3ecef;
+  border-radius: 8px;
+  background: #f9fcfc;
+}
+
+.analysis-geology-detail strong {
+  overflow-wrap: anywhere;
+}
+
+.analysis-subsection-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--workspace-ink);
+  font-size: 10px;
+}
+
+.analysis-mini-chart {
+  width: 100%;
+  height: 175px;
+  min-width: 0;
+  padding: 6px 3px 0;
+  border: 1px solid #edf2f4;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.analysis-strata-panel {
+  padding: 12px;
+  border: 1px solid #e3ecef;
+  border-radius: 8px;
+  color: var(--workspace-ink);
+  font-size: 10px;
+}
+
+.analysis-strata-panel > div {
+  display: flex;
+  align-items: end;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.analysis-strata-panel > div span {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 4px 4px 0 0;
+  color: #fff;
+  font-size: 9px;
+  text-align: center;
+}
+
+.analysis-strata-panel p {
+  margin: 8px 0 0;
+  color: var(--workspace-muted);
+  font-size: 9px;
+}
+
+.analysis-env-status-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.analysis-env-status {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 10px;
+  border: 1px solid var(--workspace-border);
+  border-left: 3px solid #168255;
+  border-radius: 8px;
+  color: var(--workspace-ink);
+  background: var(--workspace-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.analysis-env-status.warning { border-left-color: #d97706; }
+.analysis-env-status.critical { border-left-color: #dc2626; }
+.analysis-env-status.is-selected { box-shadow: 0 0 0 2px rgba(22, 138, 120, 0.13); }
+.analysis-env-status span { color: var(--workspace-muted); font-size: 9px; }
+.analysis-env-status strong { font-size: 14px; }
+.analysis-env-status small { color: var(--workspace-muted); font-size: 8px; }
+
+.analysis-threshold-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #e4edf0;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.analysis-threshold-editor > div {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.analysis-threshold-editor strong { color: var(--workspace-ink); font-size: 10px; }
+.analysis-threshold-editor small { color: var(--workspace-muted); font-size: 9px; }
+.analysis-threshold-editor label { display: flex; flex-direction: column; gap: 4px; color: var(--workspace-muted); font-size: 9px; }
+.analysis-threshold-editor input { width: 86px; padding: 6px; border: 1px solid var(--workspace-border); border-radius: 6px; color: var(--workspace-ink); background: var(--workspace-surface); }
+
+.analysis-status-pill {
+  display: inline-block;
+  padding: 4px 7px;
+  border-radius: 12px;
+  color: #168255;
+  background: #e7f7ef;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.analysis-status-pill.warning { color: #9a5d00; background: #fff4d8; }
+.analysis-status-pill.critical { color: #b52f2a; background: #fff0ee; }
+
+.analysis-comparison-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.analysis-comparison-kpis span {
+  display: flex;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid #e3ecef;
+  border-radius: 8px;
+  color: var(--workspace-muted);
+  background: #f8fbfc;
+  font-size: 9px;
+}
+
+.analysis-comparison-kpis strong { color: var(--workspace-ink); }
+.comparison-export { justify-content: flex-end; }
+
+.analysis-builder-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(140px, 0.7fr) 2fr auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e3ecef;
+  border-radius: 9px;
+  background: #f8fbfc;
+}
+
+.analysis-builder-metrics {
+  max-height: 110px;
+  overflow: auto;
+}
+
+.analysis-builder-form > button {
+  min-height: 35px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--workspace-accent);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.analysis-builder-form > button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.analysis-saved-configs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: var(--workspace-muted);
+  font-size: 9px;
+}
+
+.analysis-saved-configs button {
+  padding: 6px 8px;
+  border: 1px solid #d7e7e2;
+  border-radius: 7px;
+  color: var(--workspace-accent-strong);
+  background: #f6fbf9;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.analysis-custom-result {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.analysis-custom-result > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--workspace-ink);
+  font-size: 10px;
+}
+
+.analysis-custom-result > div:first-child span { color: var(--workspace-muted); }
+.analysis-export-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.analysis-rule-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #f0dfb7;
+  border-radius: 8px;
+  color: #765715;
+  background: #fff9eb;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.analysis-anomaly-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.analysis-anomaly-list article {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #e5ecef;
+  border-radius: 8px;
+  background: #fbfdfe;
+}
+
+.analysis-anomaly-icon,
+.analysis-ai-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border-radius: 8px;
+  color: #a16b12;
+  background: #fff3d6;
+}
+
+.analysis-anomaly-list article > div { min-width: 0; flex: 1; }
+.analysis-anomaly-list article strong { color: var(--workspace-ink); font-size: 10px; }
+.analysis-anomaly-list article p { margin: 4px 0 0; color: var(--workspace-muted); font-size: 9px; line-height: 1.5; }
+
+.analysis-ai-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #d8e9e8;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #f7fbfa, #f7f9fd);
+}
+
+.analysis-ai-card > div:first-child { display: flex; align-items: flex-start; gap: 9px; }
+.analysis-ai-icon { color: #146c6c; background: #e3f3ef; }
+.analysis-ai-card strong { color: var(--workspace-ink); font-size: 11px; }
+.analysis-ai-card p { margin: 4px 0 0; color: var(--workspace-muted); font-size: 9px; line-height: 1.5; }
+.analysis-ai-placeholder { padding: 9px; border: 1px dashed #c8dcda; border-radius: 7px; color: var(--workspace-muted); font-size: 9px; }
+.analysis-ai-result { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.analysis-ai-result article { display: flex; flex-direction: column; gap: 4px; padding: 7px 9px; border-radius: 7px; background: var(--workspace-surface); font-size: 9px; }
+.analysis-ai-result article span,
+.analysis-ai-result article small { color: var(--workspace-muted); }
+
+.analysis-empty-state {
+  padding: 24px;
+  border: 1px dashed var(--workspace-border);
+  border-radius: 8px;
+  color: var(--workspace-muted);
+  background: #fafcfd;
+  font-size: 10px;
+  text-align: center;
+}
+
+.analysis-inline-error {
+  padding: 9px 11px;
+  border: 1px solid #f1c6b8;
+  border-radius: 8px;
+  color: #9f3b26;
+  background: #fff4f0;
+  font-size: 10px;
+}
+
+.analysis-data-footnote {
+  margin: 0;
+  color: var(--workspace-muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.analysis-report-preview { color: var(--workspace-ink); font-size: 12px; }
+.analysis-report-preview dl { display: grid; grid-template-columns: 130px 1fr; gap: 8px; }
+.analysis-report-preview dt { color: var(--workspace-muted); }
+.analysis-report-preview dd { margin: 0; font-weight: 650; }
+.analysis-detail-json { max-height: 55vh; overflow: auto; padding: 12px; border-radius: 8px; color: #234; background: #f5f8fa; font-size: 10px; white-space: pre-wrap; }
+.analysis-drilldown-modal { max-width: 980px; }
+
+@media (max-width: 1000px) {
+  .analysis-report-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analysis-controls-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+  .analysis-builder-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analysis-env-status-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .analysis-intelligence { padding: 13px; }
+  .analysis-intel-heading { flex-direction: column; }
+  .analysis-filter-bar { align-items: stretch; }
+  .analysis-control { min-width: 0; flex: 1 1 130px; }
+  .analysis-filter-summary { flex-basis: 100%; margin: 2px 0; }
+  .analysis-controls-grid,
+  .analysis-report-filters,
+  .analysis-builder-form { grid-template-columns: minmax(0, 1fr); }
+  .analysis-env-status-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analysis-geology-detail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analysis-summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analysis-summary-strip span:nth-child(2) { border-right: 0; }
+  .analysis-summary-strip span:nth-child(n + 3) { border-top: 1px solid #e3ecef; }
+  .analysis-report-pagination { align-items: flex-start; flex-direction: column; }
+  .analysis-report-preview dl { grid-template-columns: 100px 1fr; }
+}
+
+.app.dark-mode .workspace-page .analysis-intelligence,
+.app.dark-mode .workspace-page .analysis-intel-chart,
+.app.dark-mode .workspace-page .analysis-env-status,
+.app.dark-mode .workspace-page .analysis-data-table-wrap,
+.app.dark-mode .workspace-page .analysis-summary-strip,
+.app.dark-mode .workspace-page .analysis-geology-detail > div,
+.app.dark-mode .workspace-page .analysis-ai-card,
+.app.dark-mode .workspace-page .analysis-anomaly-list article {
+  border-color: #31505d;
+  background-color: #152a38;
+}
+
+.app.dark-mode .workspace-page .analysis-intel-heading h3,
+.app.dark-mode .workspace-page .analysis-summary-strip strong,
+.app.dark-mode .workspace-page .analysis-geology-detail strong,
+.app.dark-mode .workspace-page .analysis-env-status strong,
+.app.dark-mode .workspace-page .analysis-data-table,
+.app.dark-mode .workspace-page .analysis-data-table td,
+.app.dark-mode .workspace-page .analysis-mine-name-cell button,
+.app.dark-mode .workspace-page .analysis-anomaly-list article strong,
+.app.dark-mode .workspace-page .analysis-ai-card strong {
+  color: #e7f0f4;
+}
+
+.app.dark-mode .workspace-page .analysis-filter-bar,
+.app.dark-mode .workspace-page .analysis-report-filters,
+.app.dark-mode .workspace-page .analysis-threshold-editor,
+.app.dark-mode .workspace-page .analysis-builder-form,
+.app.dark-mode .workspace-page .analysis-empty-state,
+.app.dark-mode .workspace-page .analysis-detail-json {
+  border-color: #31505d;
+  background: #122633;
+}
+
+.app.dark-mode .workspace-page .analysis-report-filters input,
+.app.dark-mode .workspace-page .analysis-report-filters select,
+.app.dark-mode .workspace-page .analysis-control input,
+.app.dark-mode .workspace-page .analysis-control select,
+.app.dark-mode .workspace-page .analysis-threshold-editor input {
+  border-color: #416170;
+  color: #e7f0f4;
+  background: #18303e;
+}
+
+.app.dark-mode .workspace-page .analysis-data-table th { color: #b7c9d2; background: #1a3442; }
+.app.dark-mode .workspace-page .analysis-data-table td { border-color: #2b4653; }
+.app.dark-mode .workspace-page .analysis-data-table tbody tr:hover { background: #1c3946; }
+.app.dark-mode .workspace-page .analysis-intel-tabs button.is-active { border-color: #3e706a; color: #9ce0cd; background: #1c403f; }
+.app.dark-mode .workspace-page .analysis-summary-strip span { border-color: #31505d; }
+.app.dark-mode .workspace-page .analysis-detail-strip { border-color: #315c55; color: #d5ebe5; background: #173731; }
+.app.dark-mode .workspace-page .analysis-report-pagination button,
+.app.dark-mode .workspace-page .analysis-quiet-action,
+.app.dark-mode .workspace-page .analysis-export-actions button { border-color: #416170; color: #bce7da; background: #18303e; }
+
 .assistant-page .assistant-banner {
   background-image: var(--workspace-banner-photo-overlay), url("./assets/section-assistant-field.jpg") !important;
   background-position: center 56% !important;

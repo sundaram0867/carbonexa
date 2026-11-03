@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
@@ -6,8 +6,15 @@ import {
 } from 'recharts';
 import { 
   Leaf, Truck, BarChart2, Plus, 
-  Calendar, Trash2, X, FileText, CheckCircle2, Pencil
+  Calendar, Trash2, X, FileText, CheckCircle2, Pencil, Download
 } from 'lucide-react';
+import AnalysisIntelligence from '../components/AnalysisIntelligence';
+import { ANALYSIS_MINES, ANALYSIS_REPORTS } from '../data/analysisMockData';
+import { exportPdf, exportRows } from '../utils/analysisExport';
+import { analysisService } from '../services/analysisService';
+import { dataMode } from '../services/api';
+
+const formatNumber = (value) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 1 });
 
 function Analysis() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,6 +65,19 @@ function Analysis() {
   const [editingChartData, setEditingChartData] = useState(false);
   const [chartDataDraft, setChartDataDraft] = useState({ coal: '', overburden: '', others: '' });
   const [monthlyBarOverrides, setMonthlyBarOverrides] = useState(storedAnalysisData.chartOverrides);
+  const [activeKpi, setActiveKpi] = useState('');
+  const [analysisKpiRows, setAnalysisKpiRows] = useState([]);
+  const [analysisKpiLoading, setAnalysisKpiLoading] = useState(false);
+  const [analysisKpiError, setAnalysisKpiError] = useState('');
+  const [mineDetail, setMineDetail] = useState(null);
+  const [reportPreview, setReportPreview] = useState(null);
+  const [reportSearch, setReportSearch] = useState('');
+  const [reportCategory, setReportCategory] = useState('All categories');
+  const [reportProject, setReportProject] = useState('All projects');
+  const [reportDate, setReportDate] = useState('All dates');
+  const [reportSort, setReportSort] = useState('generated');
+  const [reportPage, setReportPage] = useState(1);
+  const reportPageSize = 5;
 
   useEffect(() => {
     if (actionParam !== 'generate') return;
@@ -75,35 +95,7 @@ function Analysis() {
   const [analysisType, setAnalysisType] = useState('Production');
   const [analysisProject, setAnalysisProject] = useState('Jharia Block');
 
-  const [analysisReports, setAnalysisReports] = useState(() => storedAnalysisData.reports || [
-    { 
-      id: 1, 
-      name: 'Monthly Production Analysis', 
-      desc: 'Output trend and performance', 
-      type: 'Production', 
-      project: 'Bokaro Project', 
-      generated: '28 Sep 2026', 
-      status: 'Completed' 
-    },
-    { 
-      id: 2, 
-      name: 'Environmental Impact Analysis', 
-      desc: 'Air, water and soil assessment', 
-      type: 'Environmental', 
-      project: 'North Karanpura', 
-      generated: '25 Sep 2026', 
-      status: 'Completed' 
-    },
-    { 
-      id: 3, 
-      name: 'Geological Survey Insights', 
-      desc: 'Resource estimation and mapping', 
-      type: 'Geological', 
-      project: 'Jharia Block', 
-      generated: '22 Sep 2026', 
-      status: 'In Review' 
-    },
-  ]);
+  const [analysisReports, setAnalysisReports] = useState(() => storedAnalysisData.reports || ANALYSIS_REPORTS);
 
   useEffect(() => {
     const handleStorageError = (event) => setToastMessage(event.detail);
@@ -137,7 +129,18 @@ function Analysis() {
     { name: 'North Karanpura', output: '18,450', change: '-5%', status: 'Maintenance', trendUp: false },
     { name: 'Talcher Coalfield', output: '16,780', change: '+15%', status: 'Active', trendUp: true },
     { name: 'Ib Valley', output: '12,960', change: '-10%', status: 'Active', trendUp: false },
-  ];
+  ].map((mine) => {
+    const record = ANALYSIS_MINES.find((item) => item.name === mine.name);
+    const output = Number(mine.output.replaceAll(',', ''));
+    return {
+      ...mine,
+      target: record?.target ?? output,
+      achievement: record ? Math.round((output / record.target) * 100) : 0,
+      productivity: record?.productivity ?? 0,
+      rank: [...ANALYSIS_MINES].sort((a, b) => b.productivity - a.productivity).findIndex((item) => item.name === mine.name) + 1,
+      mineRecord: record,
+    };
+  });
 
   const monthlyBars = [
     { month: 'Jan', val: 35, total: '24,100', coal: '16,000', overburden: '6,100', others: '2,000' },
@@ -283,6 +286,81 @@ function Analysis() {
   };
 
   const activeBarData = monthlyBars[activeBarIndex];
+  const outputKpiValue = selectedMineFilter === 'All Mines' ? '1,24,560' : mineWiseData.find((mine) => mine.name === selectedMineFilter)?.output || '—';
+  const reportProjects = [...new Set(analysisReports.map((report) => report.project))];
+  const filteredAnalysisReports = useMemo(() => {
+    const query = reportSearch.trim().toLowerCase();
+    return analysisReports.filter((report) => {
+      const matchesSearch = !query || [report.name, report.desc, report.project].some((value) => value.toLowerCase().includes(query));
+      const matchesCategory = reportCategory === 'All categories' || report.type === reportCategory;
+      const matchesProject = reportProject === 'All projects' || report.project === reportProject;
+      const matchesDate = reportDate === 'All dates' || (reportDate === 'September 2026' && report.generated.includes('Sep 2026')) || (reportDate === 'August 2026' && report.generated.includes('Aug 2026'));
+      return matchesSearch && matchesCategory && matchesProject && matchesDate;
+    }).sort((a, b) => {
+      if (reportSort === 'name') return a.name.localeCompare(b.name);
+      if (reportSort === 'status') return a.status.localeCompare(b.status);
+      return new Date(b.generated) - new Date(a.generated);
+    });
+  }, [analysisReports, reportSearch, reportCategory, reportProject, reportDate, reportSort]);
+  const reportPageCount = Math.max(1, Math.ceil(filteredAnalysisReports.length / reportPageSize));
+  const currentReportPage = Math.min(reportPage, reportPageCount);
+  const paginatedAnalysisReports = filteredAnalysisReports.slice((currentReportPage - 1) * reportPageSize, currentReportPage * reportPageSize);
+  const drillDateBounds = useMemo(() => (selectedTimeframe === 'August 2026'
+    ? ['2026-08-01', '2026-08-31']
+    : selectedTimeframe === 'Q3 2026'
+      ? ['2026-07-01', '2026-09-30']
+      : ['2026-01-01', '2026-09-30']), [selectedTimeframe]);
+
+  useEffect(() => {
+    if (!activeKpi) return undefined;
+    let isCurrent = true;
+    const timer = window.setTimeout(async () => {
+      setAnalysisKpiLoading(true);
+      setAnalysisKpiError('');
+      try {
+        const mineId = ANALYSIS_MINES.find((mine) => mine.name === selectedMineFilter)?.id;
+        const filters = { ...(mineId ? { mineIds: [mineId] } : {}), dateFrom: drillDateBounds[0], dateTo: drillDateBounds[1] };
+        let rows = [];
+        if (activeKpi === 'Total Mining Output') {
+          const records = await analysisService.getMiningOutput(filters);
+          const groups = new Map();
+          records.forEach((row) => {
+            const month = `${row.month} 2026`;
+            const current = groups.get(month) || { Month: month, Mine: selectedMineFilter === 'All Mines' ? 'All selected mines' : selectedMineFilter, 'Actual output (t)': 0, 'Target (t)': 0, 'Coal (t)': 0, 'Overburden (t)': 0 };
+            current['Actual output (t)'] += row.actualTonnes;
+            current['Target (t)'] += row.targetTonnes;
+            current['Coal (t)'] += row.coalTonnes;
+            current['Overburden (t)'] += row.overburdenTonnes;
+            current.Source = dataMode === 'mock' ? 'Demonstration' : 'API';
+            groups.set(month, current);
+          });
+          rows = [...groups.values()];
+        } else if (activeKpi === 'CO₂ Emissions') {
+          const result = await analysisService.getEnvironmentalIndicators(filters);
+          rows = result.records.map((row) => ({ Mine: row.mine, Month: `${row.month} 2026`, 'CO₂ emissions (tCO₂e)': row.co2Tonnes, Source: result.source === 'demonstration' ? 'Demonstration' : 'API' }));
+        } else if (activeKpi === 'Active Mines') {
+          const [mineRecords, productionRecords] = await Promise.all([analysisService.getMineWiseOutput(), analysisService.getMiningOutput(filters)]);
+          rows = mineRecords.filter((mine) => mine.status === 'Active' && (selectedMineFilter === 'All Mines' || mine.name === selectedMineFilter)).map((mine) => {
+            const mineRows = productionRecords.filter((row) => row.mineId === mine.id);
+            const actual = mineRows.reduce((sum, row) => sum + row.actualTonnes, 0);
+            const target = mineRows.reduce((sum, row) => sum + row.targetTonnes, 0);
+            return { Mine: mine.name, Status: mine.status, 'Production (t)': actual, Target: target, 'Target achievement': target ? `${Math.round((actual / target) * 100)}%` : '—', 'Productivity (t/worker)': mine.productivity, 'Reserve (Mt)': mine.reserve, Source: dataMode === 'mock' ? 'Demonstration' : 'API' };
+          });
+        } else {
+          rows = filteredAnalysisReports.map((report) => ({ Name: report.name, Category: report.type, Project: report.project, Generated: report.generated, Status: report.status }));
+        }
+        if (isCurrent) setAnalysisKpiRows(rows);
+      } catch (loadError) {
+        if (isCurrent) setAnalysisKpiError(loadError.message || 'Could not load KPI details.');
+      } finally {
+        if (isCurrent) setAnalysisKpiLoading(false);
+      }
+    }, 0);
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(timer);
+    };
+  }, [activeKpi, selectedMineFilter, drillDateBounds, filteredAnalysisReports]);
 
   return (
     <div className="workspace-page analysis-page" style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
@@ -349,21 +427,21 @@ function Analysis() {
       {/* Top Metric Cards */}
       <div className="workspace-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         
-        <div style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="analysis-kpi-card" role="button" tabIndex={0} onClick={() => setActiveKpi('Total Mining Output')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveKpi('Total Mining Output'); } }} aria-label="Open total mining output records" style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Total Mining Output</span>
             <div style={{ background: '#e0f2fe', padding: '8px', borderRadius: '6px', color: '#0284c7' }}><Truck size={18} /></div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', margin: 0 }}>
-              {selectedMineFilter === 'Jharia Block' ? '28,560' : selectedMineFilter === 'Bokaro Project' ? '24,320' : '1,24,560'}
+              {outputKpiValue}
             </h2>
             <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>↑ 12% <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'normal' }}>vs last month</span></span>
           </div>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>tonnes ({selectedTimeframe})</span>
         </div>
 
-        <div style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="analysis-kpi-card" role="button" tabIndex={0} onClick={() => setActiveKpi('CO₂ Emissions')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveKpi('CO₂ Emissions'); } }} aria-label="Open carbon dioxide emission history" style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>CO₂ Emissions</span>
             <div style={{ background: '#dcfce7', padding: '8px', borderRadius: '6px', color: '#16a34a' }}><Leaf size={18} /></div>
@@ -375,7 +453,7 @@ function Analysis() {
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>tonnes CO₂e</span>
         </div>
 
-        <div style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="analysis-kpi-card" role="button" tabIndex={0} onClick={() => setActiveKpi('Active Mines')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveKpi('Active Mines'); } }} aria-label="Open active mine details" style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Active Mines</span>
             <div style={{ background: '#e0f2fe', padding: '8px', borderRadius: '6px', color: '#0284c7' }}><Truck size={18} /></div>
@@ -387,7 +465,7 @@ function Analysis() {
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>mines operational</span>
         </div>
 
-        <div style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="analysis-kpi-card" role="button" tabIndex={0} onClick={() => setActiveKpi('Analysis Reports')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveKpi('Analysis Reports'); } }} aria-label="Open analysis report records" style={{ background: '#fff', padding: '16px 20px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Analysis Reports</span>
             <div style={{ background: '#fae8ff', padding: '8px', borderRadius: '6px', color: '#9333ea' }}><FileText size={18} /></div>
@@ -456,7 +534,7 @@ function Analysis() {
             Material Distribution
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px' }}>
-            Select a material to inspect its share.
+            Select a material to inspect its share · demonstration data.
           </div>
 
           <div className="analysis-geology-layout">
@@ -526,7 +604,7 @@ function Analysis() {
       <div style={{ marginBottom: '24px' }}>
         <div style={{ marginBottom: '10px' }}>
           <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: '0 0 2px 0' }}>Environmental Indicators</h3>
-          <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>Key environmental parameters across mines</p>
+          <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>Key environmental parameters across mines · demonstration values</p>
         </div>
 
         <div className="analysis-environment-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
@@ -586,7 +664,23 @@ function Analysis() {
             <div>
               <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Recent Analysis Reports</h3>
             </div>
-            <span style={{ fontSize: '12px', color: '#0284c7', fontWeight: '500', cursor: 'pointer' }}>View All</span>
+            <div style={{ display: 'flex', gap: '6px' }}><button type="button" className="analysis-quiet-action" onClick={() => { setReportSearch(''); setReportCategory('All categories'); setReportProject('All projects'); setReportDate('All dates'); setReportPage(1); }}>Reset filters</button><button type="button" className="analysis-quiet-action" onClick={() => exportRows(filteredAnalysisReports.map((report) => ({ Name: report.name, Category: report.type, Project: report.project, Generated: report.generated, Status: report.status })), 'carbonexa-analysis-reports', 'csv', 'Analysis reports')}><Download size={13} /> Export</button></div>
+          </div>
+
+          <div className="analysis-report-filters">
+            <input type="search" aria-label="Search reports" placeholder="Search reports or projects" value={reportSearch} onChange={(event) => setReportSearch(event.target.value)} />
+            <select aria-label="Filter reports by category" value={reportCategory} onChange={(event) => setReportCategory(event.target.value)}>
+              <option>All categories</option><option>Production</option><option>Environmental</option><option>Geological</option>
+            </select>
+            <select aria-label="Filter reports by project" value={reportProject} onChange={(event) => setReportProject(event.target.value)}>
+              <option>All projects</option>{reportProjects.map((project) => <option key={project}>{project}</option>)}
+            </select>
+            <select aria-label="Filter reports by date" value={reportDate} onChange={(event) => setReportDate(event.target.value)}>
+              <option>All dates</option><option>September 2026</option><option>August 2026</option>
+            </select>
+            <select aria-label="Sort analysis reports" value={reportSort} onChange={(event) => setReportSort(event.target.value)}>
+              <option value="generated">Newest</option><option value="name">Name</option><option value="status">Status</option>
+            </select>
           </div>
 
           <div className="analysis-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 64px', padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#64748b' }}>
@@ -598,11 +692,11 @@ function Analysis() {
             <div style={{ textAlign: 'right' }}>Actions</div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
-            {analysisReports.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '220px', overflowX: 'auto' }}>
+            {paginatedAnalysisReports.length === 0 ? (
               <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>No reports found.</div>
             ) : (
-              analysisReports.map((rep) => (
+              paginatedAnalysisReports.map((rep) => (
                 <div key={rep.id} className="analysis-table-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.2fr 90px 90px 64px', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                     <FileText size={16} color="#0284c7" style={{ marginTop: '2px', flexShrink: 0 }} />
@@ -616,6 +710,9 @@ function Analysis() {
                   <div style={{ fontSize: '11px', color: '#64748b' }}>{rep.generated}</div>
                   <div>{getStatusBadge(rep.status)}</div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
+                    <button type="button" onClick={() => setReportPreview(rep)} title="Preview report" aria-label={`Preview ${rep.name}`} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#146c6c', padding: '2px' }}>
+                      <FileText size={15} />
+                    </button>
                     <button type="button" onClick={() => openAnalysisEditor(rep)} title="Edit report details" aria-label={`Edit ${rep.name}`} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#146c6c', padding: '2px' }}>
                       <Pencil size={15} />
                     </button>
@@ -627,6 +724,7 @@ function Analysis() {
               ))
             )}
           </div>
+          <div className="analysis-report-pagination"><span>{filteredAnalysisReports.length ? `${(currentReportPage - 1) * reportPageSize + 1}–${Math.min(currentReportPage * reportPageSize, filteredAnalysisReports.length)} of ${filteredAnalysisReports.length}` : '0 reports'}</span><div><button type="button" disabled={currentReportPage <= 1} onClick={() => setReportPage((page) => Math.max(1, Math.min(reportPageCount, page - 1)))}>Previous</button><span>Page {currentReportPage} / {reportPageCount}</span><button type="button" disabled={currentReportPage >= reportPageCount} onClick={() => setReportPage((page) => Math.min(reportPageCount, page + 1))}>Next</button></div></div>
         </div>
 
         {/* Mine-wise Output Table */}
@@ -636,27 +734,31 @@ function Analysis() {
               <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Mine-wise Output</h3>
               <span style={{ fontSize: '11px', color: '#64748b' }}>Output comparison across active mines</span>
             </div>
-            <span style={{ fontSize: '12px', color: '#0284c7', fontWeight: '500', cursor: 'pointer' }}>View All</span>
+            <button type="button" className="analysis-quiet-action" onClick={() => document.querySelector('.analysis-intelligence')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Advanced analysis</button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.1fr 90px', padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: '600', color: '#64748b' }}>
+          <div className="analysis-mine-table-row analysis-mine-table-heading">
             <div>Mine Name</div>
             <div>Output (tonnes)</div>
-            <div>Change</div>
+            <div>Growth</div>
+            <div>Target hit</div>
+            <div>Rank</div>
             <div style={{ textAlign: 'right' }}>Status</div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '220px', overflowX: 'auto' }}>
             {mineWiseData.map((mine, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.1fr 90px', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div key={idx} className="analysis-mine-table-row">
+                <div className="analysis-mine-name-cell">
                   <Truck size={15} color="#0284c7" />
-                  <span style={{ fontWeight: '500', color: '#0f172a' }}>{mine.name}</span>
+                  <button type="button" onClick={() => setMineDetail(mine)}>{mine.name}</button>
                 </div>
                 <div style={{ fontWeight: '600', color: '#0f172a' }}>{mine.output}</div>
                 <div style={{ color: mine.trendUp ? '#16a34a' : '#dc2626', fontWeight: '600', fontSize: '11px' }}>
                   {mine.change}
                 </div>
+                <div>{mine.achievement}%</div>
+                <div>#{mine.rank} · {mine.productivity} t/w</div>
                 <div style={{ textAlign: 'right' }}>{getStatusBadge(mine.status)}</div>
               </div>
             ))}
@@ -664,6 +766,43 @@ function Analysis() {
         </div>
 
       </div>
+
+      <AnalysisIntelligence key={`${selectedMineFilter}-${selectedTimeframe}`} initialMine={selectedMineFilter} timeframe={selectedTimeframe} />
+
+      {activeKpi && (
+        <div className="documents-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveKpi(''); }}>
+          <div className="documents-modal analysis-drilldown-modal" role="dialog" aria-modal="true" aria-labelledby="analysis-kpi-title">
+            <div className="documents-modal-heading">
+              <div><h3 id="analysis-kpi-title">{activeKpi} records</h3><p>Reporting window: {selectedTimeframe} · Mine filter: {selectedMineFilter} · {activeKpi === 'Analysis Reports' ? 'Browser report library' : dataMode === 'mock' ? 'Demonstration data' : 'API records'}</p></div>
+              <button type="button" className="documents-modal-close" aria-label="Close KPI details" onClick={() => setActiveKpi('')}><X size={16} /></button>
+            </div>
+            {analysisKpiLoading && <div className="analysis-empty-state">Loading detail records…</div>}
+            {analysisKpiError && <div className="analysis-inline-error" role="alert">{analysisKpiError}</div>}
+            {!analysisKpiLoading && !analysisKpiError && <div className="analysis-data-table-wrap"><table className="analysis-data-table"><thead><tr>{Object.keys(analysisKpiRows[0] || {}).map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{analysisKpiRows.map((row, index) => <tr key={`${activeKpi}-${index}`}>{Object.keys(analysisKpiRows[0] || {}).map((column) => <td key={column}>{row[column]}</td>)}</tr>)}</tbody></table>{analysisKpiRows.length === 0 && <div className="analysis-empty-state">No records were found for these filters.</div>}</div>}
+            <div className="documents-modal-actions"><button type="button" className="documents-secondary-action" disabled={analysisKpiLoading || !analysisKpiRows.length} onClick={() => exportRows(analysisKpiRows, `carbonexa-${activeKpi.toLowerCase().replaceAll(' ', '-')}`, 'csv', activeKpi)}>Export CSV</button><button type="button" className="documents-secondary-action" disabled={analysisKpiLoading || !analysisKpiRows.length} onClick={() => exportRows(analysisKpiRows, `carbonexa-${activeKpi.toLowerCase().replaceAll(' ', '-')}`, 'xls', activeKpi)}>Export Excel</button><button type="button" className="documents-secondary-action" disabled={analysisKpiLoading || !analysisKpiRows.length} onClick={() => exportPdf(analysisKpiRows, activeKpi)}>Export PDF</button><button type="button" className="documents-secondary-action" onClick={() => setActiveKpi('')}>Close</button></div>
+          </div>
+        </div>
+      )}
+
+      {reportPreview && (
+        <div className="documents-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setReportPreview(null); }}>
+          <div className="documents-modal" role="dialog" aria-modal="true" aria-labelledby="analysis-report-preview-title">
+            <div className="documents-modal-heading"><div><h3 id="analysis-report-preview-title">{reportPreview.name}</h3><p>Analysis report preview · {reportPreview.generated}</p></div><button type="button" className="documents-modal-close" aria-label="Close report preview" onClick={() => setReportPreview(null)}><X size={16} /></button></div>
+            <div className="analysis-report-preview"><p>{reportPreview.desc}</p><dl><dt>Category</dt><dd>{reportPreview.type}</dd><dt>Mine / project</dt><dd>{reportPreview.project}</dd><dt>Generated</dt><dd>{reportPreview.generated}</dd><dt>Analysis status</dt><dd>{reportPreview.status}</dd></dl><p className="analysis-data-footnote">This preview contains the report library record. Open the Reports module for report generation and approval workflows.</p></div>
+            <div className="documents-modal-actions"><button type="button" className="documents-secondary-action" onClick={() => exportRows([{ Name: reportPreview.name, Description: reportPreview.desc, Category: reportPreview.type, Project: reportPreview.project, Generated: reportPreview.generated, Status: reportPreview.status }], `carbonexa-report-${reportPreview.id}`, 'csv', reportPreview.name)}><Download size={14} /> Export record</button><button type="button" className="documents-secondary-action" onClick={() => setReportPreview(null)}>Close</button></div>
+          </div>
+        </div>
+      )}
+
+      {mineDetail && (
+        <div className="documents-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setMineDetail(null); }}>
+          <div className="documents-modal" role="dialog" aria-modal="true" aria-labelledby="analysis-mine-detail-title">
+            <div className="documents-modal-heading"><div><h3 id="analysis-mine-detail-title">{mineDetail.name}</h3><p>Mine performance detail · {selectedTimeframe}</p></div><button type="button" className="documents-modal-close" aria-label="Close mine details" onClick={() => setMineDetail(null)}><X size={16} /></button></div>
+            <div className="analysis-geology-detail"><div><small>Operational status</small><strong>{mineDetail.status}</strong></div><div><small>Output</small><strong>{mineDetail.output} t</strong></div><div><small>Production target</small><strong>{formatNumber(mineDetail.target)} t</strong></div><div><small>Target achievement</small><strong>{mineDetail.achievement}%</strong></div><div><small>Growth</small><strong>{mineDetail.change}</strong></div><div><small>Productivity rank</small><strong>#{mineDetail.rank} · {mineDetail.productivity} t/worker</strong></div><div><small>Commodity</small><strong>{mineDetail.mineRecord?.commodity || 'Coal'}</strong></div><div><small>Estimated reserve</small><strong>{mineDetail.mineRecord?.reserve} Mt</strong></div><div><small>Grade</small><strong>{mineDetail.mineRecord?.grade}%</strong></div></div>
+            <div className="documents-modal-actions"><button type="button" className="documents-secondary-action" onClick={() => setMineDetail(null)}>Close</button></div>
+          </div>
+        </div>
+      )}
 
       {editingAnalysis && (
         <div className="documents-modal-backdrop">
